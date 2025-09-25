@@ -18,4 +18,4 @@ jobs:
         # account_type: org
         # static_list: "repo_name"
         # black_list: "repo_name,repo_name2"
-        white_list: "SUFE-NOPE-Robot"
+        static_list: "SUFE-NOPE-Robot"

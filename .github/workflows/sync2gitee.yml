@@ -8,7 +8,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Mirror the Github organization repos to Gitee.
+    - name: Mirror the Github repos to Gitee.
       uses: Yikun/gitee-mirror-action@v0.10
       with:
         src: github/001eander
@@ -16,4 +16,3 @@ jobs:
         dst_key: ${{ secrets.GITEE_PRIVATE_KEY }}
         dst_token:  ${{ secrets.GITEE_TOKEN }}
         static_list: "SUFE-NOPE-Robot"
-        clone_style: "ssh"

@@ -1,7 +1,7 @@
 name: Gitee repos mirror periodic job
 on:
   push:
-#   workflow_dispatch:
+  workflow_dispatch:
 #   schedule:
 #     - cron:  '1 17 * * *'
 jobs:
@@ -15,8 +15,5 @@ jobs:
         dst: gitee/o1eander
         dst_key: ${{ secrets.GITEE_PRIVATE_KEY }}
         dst_token:  ${{ secrets.GITEE_TOKEN }}
-        # account_type: org
-        # static_list: "repo_name"
-        # black_list: "repo_name,repo_name2"
         static_list: "SUFE-NOPE-Robot"
         clone_style: "ssh"

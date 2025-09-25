@@ -19,3 +19,4 @@ jobs:
         # static_list: "repo_name"
         # black_list: "repo_name,repo_name2"
         static_list: "SUFE-NOPE-Robot"
+        clone_style: "ssh"

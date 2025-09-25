@@ -1,0 +1,21 @@
+name: Gitee repos mirror periodic job
+on:
+  push:
+  # workflow_dispatch:
+  schedule:
+    - cron:  '1 17 * * *'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Mirror the Github organization repos to Gitee.
+      uses: Yikun/gitee-mirror-action@v0.10
+      with:
+        src: github/001eander
+        dst: gitee/o1eander
+        dst_key: ${{ secrets.GITEE_PRIVATE_KEY }}
+        dst_token:  ${{ secrets.GITEE_TOKEN }}
+        # account_type: org
+        # static_list: "repo_name"
+        # black_list: "repo_name,repo_name2"
+        # white_list: "repo_name,repo_name2"

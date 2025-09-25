@@ -1,0 +1,14 @@
+choregraphe下载链接
+https://community-static.aldebaran.com/resources/2.5.10/Choregraphe/choregraphe-suite-2.5.10.7-win32-setup.exe
+choregraphe及SDK下载链接
+https://developer.softbankrobotics.com/pepper-2-5/downloads/pepper-naoqi-25-downloads-windows
+
+choregraphe密钥：654e-4564-153c-6518-2f44-7562-206e-4c60-5f47-5f45
+
+choregraphe安装指南：http://doc.aldebaran.com/2-5/software/choregraphe/installing.html#desktop-installation
+*****下载好choregraphe安装包之后，双击安装包，直接按照安装指示一直点击下一步就好*******
+
+choregraphe界面及使用介绍：http://doc.aldebaran.com/2-5/software/choregraphe/index.html
+
+choregraphe与机器人的连接：http://doc.aldebaran.com/2-5/software/choregraphe/connection_widget.html
+

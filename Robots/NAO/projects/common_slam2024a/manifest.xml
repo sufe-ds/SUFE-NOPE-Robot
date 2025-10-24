@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<package uuid="common_slam2024a">
+ <names>
+  <name lang="en_US">common_slam2024a</name>
+ </names>
+ <supportedLanguages>
+  <language>zh_CN</language>
+  <language>en_US</language>
+ </supportedLanguages>
+ <descriptionLanguages>
+  <language>zh_CN</language>
+  <language>en_US</language>
+ </descriptionLanguages>
+ <contents>
+  <behaviorContent path="behavior_1">
+   <userRequestable/>
+   <nature>interactive</nature>
+   <triggerSentences>
+    <sentence lang="en_US">shanghaiyiku</sentence>
+    <sentence lang="zh_CN">上海仪酷</sentence>
+   </triggerSentences>
+   <loadingResponses/>
+   <autonomous/>
+   <permissions/>
+  </behaviorContent>
+ </contents>
+</package>

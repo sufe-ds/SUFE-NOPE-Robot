@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<package uuid="naocamera_http">
+ <names>
+  <name lang="en_US">naocamera_http</name>
+ </names>
+ <supportedLanguages>
+  <language>zh_CN</language>
+  <language>en_US</language>
+ </supportedLanguages>
+ <descriptionLanguages>
+  <language>zh_CN</language>
+  <language>en_US</language>
+ </descriptionLanguages>
+ <contents>
+  <behaviorContent path="behavior_1">
+   <nature>interactive</nature>
+   <permissions/>
+  </behaviorContent>
+ </contents>
+</package>

@@ -1,0 +1,537 @@
+*{
+  -webkit-touch-callout:none;  /*系统默认菜单被禁用*/
+  -webkit-user-select:none; /*webkit浏览器*/
+  -khtml-user-select:none; /*早期浏览器*/
+  -moz-user-select:none; /*火狐*/
+  -ms-user-select:none;  /*IE10*/
+  user-select:none;
+}
+
+body{
+	margin:0 auto;
+}
+
+.level_1{
+	width:1281px; 
+	height:802px;
+	position:fixed;
+	top:0;
+	left:0;
+	overflow:hidden;
+	background-image:url(../pictures/home.jpg);
+	background-repeat:no-repeat;
+	background-size:100% 100%;
+	
+}
+
+.level_2{
+	position:absolute;
+	top:230px;
+	width:1280px;
+	height:572px;
+	
+	text-align:center;
+}
+
+.title_1{
+	font-size:70px;
+	font-family:SimHei;
+	letter-spacing:10px;
+	color:white;
+}
+
+.title_2{
+	font-size:30px;
+	font-family:arial;
+	letter-spacing:5px;
+	color:white;
+}
+
+.xunfei{
+	width:1280px;
+	height:350px;
+	margin-top:230px;
+	background-color:rgba(255,255,255,0.9);
+	text-align:left;
+	padding-top:10px;
+	overflow:auto;
+}
+
+.pop {
+    display: none;
+    position: fixed; 
+    z-index: 2; 
+	left: 0;
+    top: 0;
+    width: 1281px; 
+    height: 802px; 
+    overflow: hidden; 
+    background-color: rgba(0,0,0,0.5); 
+	text-align:center;
+	color: rgba(0,0,0,0.90);
+}
+
+.pop .inner{
+	width:1281px;
+	height:530px;
+	position:absolute;
+	margin-top:120px;
+	text-align:left;
+	padding-top:10px;
+	/* overflow:hidden; */
+	background-color:transparent;
+}
+
+.tipsButton{
+	width:160px;
+	height:160px;
+	color:white;
+	font-size:42px;
+	background-color:rgba(29,73,97,0.7);
+	box-shadow:0px 0px 50px rgba(15,36,99,1);
+	border:8px double white;
+	border-radius:50%;
+	margin:0 40px;
+}
+
+.videoButton{
+	width:80px;
+	height:80px;
+	color:white;
+	font-size:45px;
+	background-color:rgba(29,73,97,0.5);
+	border:3px solid white;
+	border-radius:50%;	
+	position:absolute;
+	top:-170px;
+	right:10px;
+	padding-left:10px;
+}
+
+.tips{
+	position:fixed;
+	top:280px;
+	width:1281px;
+	height:522px;
+	background-color:rgba(29,73,97,0.8);
+	color:white;
+	display:none;
+	z-index: 1;
+	font-size:25px;
+}
+
+.tips table{
+	width:1261px;
+	height:100%;
+	text-align:left;
+}
+.tips table tr{
+	height:33.33%;
+	vertical-align:top;
+}
+
+.tips table tr td{
+	width:25%; 
+}
+
+.nav{
+	position:fixed;
+	top:170px;
+	width:1281px;
+	height:632px;
+	background-color:rgba(15,36,99,0.6);
+	color:white;
+	display:none;
+	z-index: 3;
+	font-size:25px;
+	
+}
+
+.navList{
+	width:75%;
+	height:530px;
+	overflow-y:auto;
+	float:right;
+	background-color:rgba(0,0,0,0.2);
+	text-align:center;
+}
+
+.navList button{
+	font-size:40px;
+	color:white;
+	margin-top:20px;
+	margin-left:10px;
+	padding:10px 25px;
+	border-radius:25px;
+	background-color:rgba(0,0,0,0.5);
+	box-shadow:0px 0px 10px rgba(255,255,0,1);
+}
+
+.routeList{
+	width:25%;
+	height:530px;
+	overflow-y:auto;
+	float:left;
+	background-color:rgba(255,0,0,0.2);
+	text-align:center;
+}
+
+.routeList button{
+	font-size:40px;
+	color:white;
+	margin-top:20px;
+	padding:10px 30px;
+	border-radius:25px;
+	background-color:rgba(0,0,0,0.5);
+	box-shadow:0px 0px 10px rgba(255,255,0,1);
+}
+
+
+.selectedNav{
+	width:25%;
+	height:530px;
+	overflow:hidden;
+	float:left;
+	background-color:rgba(255,0,0,0.2);
+	text-align:center;
+}
+
+.selectedNav .selectedNavScroll{
+	width:100%;
+	height:80%;
+	overflow-y:auto;
+	margin-top:20px;
+}
+
+.selectedNav table td{
+	font-family:SimHei;
+	font-size:30px;
+	border: 1px solid white;
+}
+
+.allNav{
+	width:75%;
+	height:530px;
+	overflow-y:auto;
+	float:right;
+	background-color:rgba(0,0,0,0.2);
+	text-align:center;
+}
+
+.allNav button{
+	font-size:40px;
+	color:white;
+	border:3px solid white;
+	border-radius:25px;
+	margin-top:20px;
+	margin-left:10px;
+	padding:10px 25px;
+	background-color:transparent;
+}
+
+.slides{
+    position:fixed;
+	top:170px;
+	width:1281px;
+	height:632px;
+	background-color:rgba(15,36,99,0.6);
+	color:white;
+	display:none;
+	z-index: 3;
+	font-size:25px;
+}
+
+
+.slideLeft{
+	width:435px;
+	height:530px;
+	overflow:hidden;
+	float:left;
+	background-color:rgba(0,0,0,0.5);
+	text-align:center;
+}
+
+.slideLeft p{
+	text-align:left;
+	width:390px;
+	height:410px;
+	overflow-y:auto;
+	margin:20px;
+}
+
+.slideRight{
+	width:832px;
+	height:530px;
+	overflow:hidden;
+	float:right;
+	background-color:rgba(0,0,0,0.2);
+	text-align:center;
+}
+
+.feedback{
+    position:fixed;
+	top:170px;
+	width:1281px;
+	height:632px;
+	background-color:rgba(15,36,99,0.6);
+	color:white;
+	display:none;
+	z-index: 3;
+	font-size:25px;
+}
+
+
+.feedbackLeft{
+	width:34%;
+	height:530px;
+	overflow:hidden;
+	float:left;
+	background-color:rgba(0,0,0,0.5);
+	text-align:center;
+}
+
+
+.feedbackRight{
+	width:66%;
+	height:530px;
+	overflow:hidden;
+	float:right;
+	background-color:rgba(0,0,0,0.2);
+	text-align:center;
+}
+
+.feedbackRight ul{
+	width:75%;
+	margin:0 auto;
+}
+
+.feedbackRight ul li{
+	list-style:none; 
+	float:left; 
+	margin:20px; 
+	color:white; 
+	cursor:pointer;
+	font-size:80px;
+	font-family:SimHei;
+}
+
+.feedbackRight textarea{
+	width:70%;
+	height:30%;
+	background-color:rgba(0,0,0,0.6);
+	border:3px solid white;
+	border-radius:10px;
+	font-size:30px;
+	font-family:SimHei;
+	color:yellow;
+	padding:10px;
+	resize:none;
+}
+
+.feedbackButton{
+	width:80%;
+	height:20%;
+	margin:0 auto;
+}
+
+.feedbackButton button{
+	width:200px;
+	height:80px;
+	margin:10px 60px;
+	color:white;
+	font-family:SimHei;
+	font-size:40px;
+	border:8px double white;
+	border-radius:20px;
+	background-color:gray;
+}
+
+.recharge{
+	width:150px;
+	height:80px;
+	position:absolute;
+	bottom:0;
+	left:0;
+	color:white;
+	font-size:60px;
+	font-weight:700;
+	border-radius:0px 40px 0px 0px;
+	border:6px solid white;
+	background-color:rgba(0,0,0,0.5);
+	text-align:center;
+}
+
+.stopNav{
+	width:150px;
+	height:80px;
+	position:absolute;
+	bottom:0;
+	left:565px;
+	color:white;
+	font-size:60px;
+	font-weight:700;
+	border-radius:40px 40px 0px 0px;
+	border:6px solid white;
+	background-color:rgba(0,0,0,0.5);
+	text-align:center;
+}
+
+.settings{
+	position:fixed;
+	top:170px;
+	width:1281px;
+	height:632px;
+	background-color:rgba(15,36,99,0.6);
+	color:white;
+	display:none;
+	z-index: 3;
+	font-size:22px;
+}
+
+.settings table button{
+	width:130px;
+	height:65px;
+	font-size:32px;
+	border:5px solid white;
+	border-radius:10px;
+	background-color:transparent;
+	color:white;
+}
+
+.settings table{
+	width:100%;
+	text-align:left;
+	margin-left:20px;
+}
+
+.back{
+	width:150px;
+	height:80px;
+	position:absolute;
+	bottom:0;
+	right:0;
+	color:white;
+	font-size:60px;
+	font-weight:700;
+	border-radius:40px 0px 0px 0px;
+	border:6px solid white;
+	background-color:rgba(0,0,0,0.5);
+	text-align:center;
+}
+
+
+.qrcode{
+	position:absolute;
+	left:760px;
+	top:0;
+	width:500px;
+	height:400px;
+	overflow:hidden;
+	text-align:center;
+	background-color:white;
+	font-size:220px;
+	color:rgba(0,97,193,1);
+}
+
+.photo_ctrl{
+	position:absolute;
+	left:760px;
+	top:400px;
+	width:500px;
+	height:130px;
+	overflow:hidden;
+	text-align:center;
+}
+
+.takePhoto{
+	width:61.8%;
+	height:100%;
+	background-color:rgba(255,201,14,0.8);
+	border:1px hidden;
+	float:left;
+	color:white;
+	font-size:65px;
+}
+
+.backPhoto{
+	width:38.2%;
+	height:100%;
+	background-color:rgba(127,127,127,0.8);
+	border:1px hidden;
+	float:right;
+	color:white;
+	font-size:65px;
+}
+
+.videoframe{
+	position:absolute;
+	top:0;
+	left:20px;
+}
+
+.video{
+	border:5px solid rgba(255,201,14,1);
+}
+
+.photo{
+	position:absolute;
+	top:0;
+	left:0;
+	border:5px solid gold;
+	display:none;
+}
+
+.terminate{
+	position:absolute;
+	bottom:1px;
+	left:590px;
+	width:100px;
+	height:100px;
+	border:5px solid white;
+	border-radius:50%;
+	font-size:35px;
+	font-family:SimHei;
+	color:white;
+	background-color:rgba(255,50,50,0.8);
+}
+
+.nextNav{
+	position:absolute;
+	bottom:1px;
+	right:5px;
+	width:240px;
+	height:100px;
+	border:5px solid white;
+	border-radius:30px;
+	font-size:35px;
+	font-family:SimHei;
+	color:white;
+	background-color:rgba(0,88,182,0.8);
+	box-shadow:0px 0px 20px rgba(255,255,255,1);
+	display:none;
+}
+
+.video_ctrl{
+	position:absolute;
+	left:20px;
+	top:550px;
+	width:700px;
+	height:120px;
+	text-align:center;
+}
+
+.video_ctrl button{
+	width:100px;
+	height:100px;
+	color:white;
+	font-size:35px;
+	background-color:rgba(255,201,14,0.8);
+	border:5px solid white;
+	border-radius:50%;
+	margin:0 35px;
+}
+
+button:focus{
+	outline: none;
+	}
+

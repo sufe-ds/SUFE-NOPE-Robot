@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" content="width=device-width,initial-scale = 0.75,minimum-scale = 0.75,maximum-scale = 0.75,user-scalable=0" name="viewport"/>
+<title>VIRobotics_home</title>
+<link rel="stylesheet" type="text/css" href="myCSS/common.css">
+<script src="./libs/qimessaging/2/qimessaging.js"></script>
+<script src="myJS/common.js"></script>
+<script>
+	createProxies();
+	setPage("home");
+	BasicAwaress(true);
+	window.onload = function(){
+		refreshQA(500);
+	};
+
+</script>
+</head>
+
+<body>
+
+<!--第一层|本网页分辨率1280*800（Naoqi2.5版Pepper）-->
+<!-- 若要切换成1680*1050（旧版Pepper），需要将头部meta中的xx-scale定义1.33，同时保证最外层div的position参数为fixed-->
+<div class = "level_1">
+	
+	<!-- 标题 -->
+	<!-- <div style="width:1281px;height:170px;text-align:center;position:absolute;top:0px;background-color:rgba(29,73,97,0.8)">
+		<div style="width:175px;float:left;">
+			<img src="pictures/logo2.png" width=140>
+		</div>
+		<div style="width:1100px;float:right;text-align:center;" >
+			<br>
+			<font class = "title_1" >智能语音交互机器人</font>
+			<br>
+			<font class = "title_2" >Intelligent Voice Interactive Robot</font>
+		</div>
+	</div> -->
+	<!-- 跑马灯 -->
+	<!-- <div style="width:1280px;position:absolute;top:180px;background-color:rgba(0,97,193,0.8)">
+		<marquee style="font-size:35px;font-weight:500;color:white;" scrollamount=12>上海仪酷智能科技有限公司</marquee>
+	</div> -->
+	
+	<!-- 第二层 -->
+	<div class="level_2">
+		
+		<!-- 讯飞弹窗 -->
+		<div id = "AI" class = "pop" style = "background-color:transparent;">
+			<div id = "xunfei" class = "xunfei">
+				<h1><font color="#0058A2">人类：</font><font id="human"></font></h1>
+					
+				<h1><font color="#ff8000">机器人：</font><font id="robot"></font></h1>	
+			</div>
+		</div>
+		
+		<!-- 广告弹窗 -->
+		<!-- <div id = "ADV" class = "pop" style = "background-color:transparent;">
+			<img id = "ADV_img" width=100% height=100%>
+
+		</div> -->
+				
+	</div>
+	
+	<!-- 提示 -->
+	<div id = "notice" style="width:1281px;position:absolute;top:160px;text-align:center;font-size:25px;display:none">
+		<h1 style="background-color:rgba(255,255,255,0.6);"><font>请在眼睛<font color="#0058A2">变蓝</font>时对我说话</font></h1>
+	</div>
+	
+	<!-- 按钮 -->
+	<div id="buttons" style="position:absolute;width:50%;top:400px;right:0;text-align:center;">
+		<button id="tipsButton" class="tipsButton" onclick="openTips(30000)" style="background-color:rgba(154, 204, 231, 0.7)">儿童科技园</button>
+	</div>
+	<!-- <div style="position:absolute;top:400px;left:600px"><img src="pictures/qrcode.jpg" height=200></div> -->
+	<div style="position:absolute;left:0;bottom:-5px"><img src="pictures/robot.png" width=650></div>
+	
+	<!-- 对话提示 -->
+	<div id = "tips" class="tips">
+		<table style="margin-left:20px;">
+			<tr>
+				<td>
+					<div>
+						<font style="color:yellow;font-weight:700">我与自己</font><br>
+						<font>比一比身高</font><br>
+						<font>头脑迷宫</font><br>
+						<font>什么气味</font><br>
+						<font>听声音</font><br>
+						<font>是什么</font><br>
+						<font>我从哪里来</font><br>
+						<font>心跳与脉搏</font><br>
+						<font>身体内部构造</font><br>
+						<font>人体拼图</font><br>
+						<font>我的血管</font><br>
+						<font>怎样的心情</font><br>
+						<font>音乐感知</font><br>
+						<font>快速反应</font><br>
+						<font>……</font><br>
+					</div>
+				</td>
+				<td>
+					<div>
+						<font style="color:yellow;font-weight:700">我在家中</font><br>
+						<font>客厅</font><br>
+						<font>卫浴间</font><br>
+						<font>家庭安全隐患</font><br>
+						<font>餐厅</font><br>
+						<font>儿童房</font><br>
+						<font>食物的好处</font><br>
+						<font>亲亲小帮手</font><br>
+						<font>正确的洗手方法</font><br>
+						<font>保持口腔卫生</font><br>
+						<font>厨房</font><br>
+						<font>体验家庭灭火</font><br>
+						<font>电从哪里来</font><br>
+						<font>垃圾分类</font><br>
+						<font>……</font><br>
+					</div>
+				</td>
+				<td>
+					<div>
+						<font style="color:yellow;font-weight:700">我与城市</font><br>
+						<font>操作起重机体验</font><br>
+						<font>堆砌砖块</font><br>
+						<font>水道管拼接</font><br>
+						<font>排水管的对面是什么</font><br>
+						<font>城市的声音</font><br>
+						<font>踏踏板</font><br>
+						<font>让轨道列车跑起来</font><br>
+						<font>操纵螺旋桨飞机</font><br>
+						<font>驾驶地铁列车</font><br>
+						<font>汽车修理工厂</font><br>
+						<font>消防车</font><br>
+						<font>建筑物火灾模拟</font><br>
+						<font>过马路</font><br>
+						<font>……</font><br>
+					</div>
+				</td>
+				<td>
+					<div>
+						<font style="color:yellow;font-weight:700">我与自然</font><br>
+						<font>平息愤怒的火山</font><br>
+						<font>小球球池</font><br>
+						<font>冒险滑梯</font><br>
+						<font>分身体验</font><br>
+						<font>万花筒之塔</font><br>
+						<font>彩虹伞</font><br>
+						<font>传声管</font><br>
+						<font>闪光的艺术棒</font><br>
+						<font>蹦蹦跳跳钢琴</font><br>
+						<font>森林打击乐</font><br>
+						<font>八音盒</font><br>
+						<font>与恐龙共舞</font><br>
+						<font>冒险河流</font><br>
+						<font>……</font><br>
+					</div>
+				</td>
+				<td>
+					<div>
+						<font style="color:yellow;font-weight:700">我与宇宙</font><br>
+						<font>星座与天象仪</font><br>
+						<font>流星环廊</font><br>
+						<font>星际穿梭</font><br>
+						<font>大家的飞船</font><br>
+						<font>浩瀚星空</font><br>
+						<font>宇宙速度与距离</font><br>
+						<font>宇宙秋千</font><br>
+						<font>蛇形摆</font><br>
+						<font>八大行星</font><br>
+						<font>小小宇航员</font><br>
+						<font>宇宙创作者</font><br>
+					</div>
+				</td>
+			</tr>
+
+		</table>
+		<div class="back" onclick="closeTips()">返回</div>
+	</div>
+	
+	
+	<!--音效区-->
+	<audio id = "sound"></audio>
+	
+</div>	
+
+</body>
+</html>

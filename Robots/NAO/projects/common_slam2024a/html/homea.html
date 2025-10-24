@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="utf-8" content="width=device-width,initial-scale = 0.75,minimum-scale = 0.75,maximum-scale = 0.75,user-scalable=0" name="viewport"/>
+<title>VIRobotics_home</title>
+<link rel="stylesheet" type="text/css" href="myCSS/common_slam2024a.css">
+<script src="./libs/qimessaging/2/qimessaging.js"></script>
+<script src="./libs/qrcode.min.js"></script>
+<script src="myJS/common_slam2024a.js"></script>
+<script>
+	createProxies();
+	setPage("home");
+	BasicAwaress(true);
+	getSlamIP();
+	window.onload = function(){
+		refreshQA(500);
+		stopRobotSay();
+		autoRecharge(65,60000);
+	};
+
+</script>
+</head>
+
+<body>
+
+<!--第一层|本网页分辨率1280*800（Naoqi2.5版Pepper）-->
+<!-- 若要切换成1680*1050（旧版Pepper），需要将头部meta中的xx-scale定义1.33，同时保证最外层div的position参数为fixed-->
+<div class = "level_1">
+	
+	<!-- 标题 -->
+	<div style="width:1281px;height:170px;text-align:center;position:absolute;top:0px;background-color:rgba(29,73,97,0.8)">
+		<div style="width:175px;float:left;">
+			<img src="pictures/logo2.png" width=140>
+		</div>
+		<div style="width:1100px;float:right;text-align:center;" >
+			<br>
+			<font class = "title_1" >导航+智能语音交互机器人</font>
+			<br>
+			<font class = "title_2" >Navigation and Intelligent Voice Interactive Robot</font>
+		</div>
+	</div>
+	
+	<!-- 跑马灯 -->
+	<!-- <div style="width:1280px;position:absolute;top:180px;background-color:rgba(0,97,193,0.8)"> -->
+		<!-- <marquee style="font-size:35px;font-weight:500;color:white;" scrollamount=12>科思创聚合物(中国)有限公司</marquee> -->
+	<!-- </div> -->
+	
+	<!-- 装饰 -->
+	<!-- <div id="homeQR" style="position:absolute;bottom:10px;right:10px"><img src="pictures/qrcode.jpg" height=150></div> -->
+	<!-- <div style="position:absolute;left:50px;bottom:0px"><img src="pictures/robot.png" height=450></div> -->
+	
+	
+	<!-- 第二层 -->
+	<div class="level_2">
+	
+		<!-- 讯飞弹窗 -->
+		<div id = "AI" class = "pop" style = "background-color:transparent;" >
+			<div id = "xunfei" class = "xunfei">
+				<h1><font color="#0058A2">人类：</font><font id="human"></font></h1>
+					
+				<h1><font color="#ff8000">机器人：</font><font id="robot"></font></h1>	
+			</div>
+		</div>
+		
+		
+		
+		<!-- 合影弹窗 -->
+		<div id = "group_photo" class = "pop" style="background-color:rgba(15,36,99,0.6);">
+			<div class = "inner">
+				<div id = "videoframe" class = "videoframe">
+					<img id = "video" width=700 height=525 class="video">
+					<img id = "photo" width=700 height=525 class="photo">
+				</div>
+				<div class="qrcode">
+					<div id = "qrcode" style="width:300px;height:300px;margin:50px auto;">
+					5
+					</div>
+				</div>
+				<div id = "photo_ctrl" class="photo_ctrl">
+					<button id="takePhoto" class="takePhoto" onclick="takePhoto()">拍照</button>
+					<button class="backPhoto" onclick="backToHome()" >返回</button>
+				</div>
+				
+				<div class="video_ctrl">
+					<button onclick="changeExposure(0)">顺光</button>
+					<button onclick="changeExposure(65535)">逆光</button>
+					<button onclick="changeHeadPitch(-0.1)">&#9650 </button>
+					<button onclick="changeHeadPitch(0.1)">&#9660 </button>
+				</div>
+				
+			</div>
+		</div>
+		
+		<!-- 图片轮播弹窗 -->
+		<div id = "slides" class = "slides">
+			<div class="slideLeft" >
+				<h2 id="slide_title" style="color:yellow">正在导航</h2>
+				<p id="slide_txt" >我在路上，请稍等...<br>（摸头停止）</p>
+			</div>
+			<div class="slideRight">
+				<img id="slide_pic123" src="pictures/scenes/moving.jpg" style="height:100%;width:100%">
+			</div>
+			
+			<button id="terminate" class="terminate" onclick="setTerminate()">终止</button>
+			<button id="nextNav" class="nextNav" onclick="goNextNav()">下一站</button>
+			
+		</div>
+		
+		<!-- 反馈弹窗 -->
+		<div id = "feedback" class = "feedback" >
+			<div class="feedbackLeft" >
+				<img src="pictures/feedback.png" height=100%>
+				
+			</div>
+			<div class="feedbackRight">
+				
+				<ul id="feedbackScore" data-score="0">
+					<li onclick="setScore(1)">&#9734;</li>
+					<li onclick="setScore(2)">&#9734;</li>
+					<li onclick="setScore(3)">&#9734;</li>
+					<li onclick="setScore(4)">&#9734;</li> 
+					<li onclick="setScore(5)">&#9734;</li>
+				</ul>
+				<textarea id="feedbackTxt" maxlength="50" placeholder="有什么建议？(50字)"></textarea>
+				<br><br>
+				<div id="feedbackThanks" style="display:none;font-size:50px;color:yellow"><h1>谢 谢！</h1></div>
+				
+				<div id="feedbackButton" class="feedbackButton">
+					<button id="feedbackSubmit" >提交</button>
+					<button onclick="backToHome()" style="background-color:rgba(0,127,255,1)">取消</button>		
+				</div>
+				
+			</div>
+		</div>
+				
+	</div>
+	
+	<!-- 提示 -->
+	<div id = "notice" style="width:1281px;position:absolute;top:160px;text-align:center;font-size:25px;display:none">
+		<h1 style="background-color:rgba(255,255,255,0.6);"><font>请在眼睛<font color="#0058A2">变蓝</font>时对我说话</font></h1>
+	</div>
+	
+	<!-- 按钮 -->
+	<div id="buttons" style="position:absolute;width:80%;top:350px;right:0;text-align:center;">
+		<button class="tipsButton" onclick="openTips(40000)">对话</button>
+		<button class="tipsButton" onclick="openNav(30000)">导航</button>
+		<button class="tipsButton" onclick="openPhoto(90000)">拍照</button>
+		<button class="tipsButton" onclick="openSettings(30000)">设置</button>
+		
+		<button class="videoButton" onclick="openVideo('pepper.mp4')">&#9658;</button>
+	</div>
+	
+	<!-- 导航列表 -->
+	<div id = "nav" class="nav" >
+	
+		<div id="routeList" class="routeList" >
+			<br><font style="font-size:40px">路线</font><br>
+			<button onclick="routeOne()">路线1</button>
+			<button onclick="routeTwo()">路线2</button>
+			<button onclick="openCustomerRoute(30000)">自定义</button>
+		</div>
+		
+		<div id="navList" class="navList" >
+			<br><font style="font-size:40px">地点</font><br>
+			
+		</div>
+		
+		<div id="recharge" class="recharge" onclick="goToRecharge(this)">充电</div>
+		<div id="stopNav" class="stopNav" onclick="cancelNav(this)">停止</div>
+		<div class="back" onclick="closeNav()">返回</div>
+	</div>
+	
+	<!-- 自定义路线 -->
+	<div id = "customerRoute" class="nav">
+		<div id="selectedNav" class="selectedNav" >
+			<br><font style="font-size:40px">已选</font><br>
+			<div id="selectedNavScroll" class="selectedNavScroll">
+				<table id="selectedNavList" width=100% >
+					
+				</table>
+			</div>	
+		</div>
+		
+		<div id="allNav" class="allNav" >
+			<br><font style="font-size:40px">请依次选择地点</font><br>
+			
+		</div>
+		
+		<div class="recharge" onclick="customerRoute()">出发</div>
+		<div class="back" onclick="backToHome()">返回</div>
+	</div>
+	
+	<!-- 设置选项 -->
+	<div id = "settings" class = "settings" >
+		<table style="width:100%;">
+			<tr align="center">
+				<td width="14%" align="left"><h2>音量：</h2></td>
+				<td width="10%"><img width=60 src='pictures/sub.png' onclick="changeRobotVolume(-5)"></td>
+				<td width="10%"><h2 id = "volume"></h2></td>
+				<td width="10%"><img width=60 src='pictures/add.png' onclick="changeRobotVolume(5)"></td>
+				
+				<td width="6%"></td>
+				
+				<td width="14%" align="left"><h2>亮度：</h2></td>
+				<td width="10%"><img width=60 src='pictures/sub.png' onclick="changeTabletBrightness(-10)"></td>
+				<td width="10%"><h2 id = "brightness"></h2></td>
+				<td width="10%"><img width=60 src='pictures/add.png' onclick="changeTabletBrightness(10)"></td>
+				
+				<td width="6%"></td>
+			</tr>
+			
+			<tr>
+				<td colspan=5><h2>Pepper电量：<font id="pepperBattery"></font></h2></td>
+				<td colspan=5><h2>CPU温度：<font id="cpuTemperature"></font></h2></td>
+			</tr>
+			<tr>
+				<td colspan=5><h2>底盘电量：<font id="slamBattery"></font></h2></td>
+				<td colspan=5><h2>序列号：<font id="headID"></font></h2></td>
+			</tr>
+			
+			<tr>
+				<td colspan=5><h2>内部版本：2024 A</h2></td>
+				
+				<td colspan=1><h2>调节作息：</h2></td>
+				<td colspan=4>
+					<button onclick="tryWakeUp()" style="width:220px">起立<font style="font-size:23px;color:rgba(255,200,0,1)">(过热无效)</font></button>
+					<button onclick="rest()" >休息</button>
+				</td>
+			</tr>
+			
+			<tr>
+				<td colspan=1><h2>网络设置：</h2></td>
+				<td colspan=4>
+					<button onclick="openNetwork('head')" >头部</button>
+					<button onclick="openNetwork('tablet')" >平板</button>
+				</td>
+				
+				<td colspan=1><h2>程序控制：</h2></td>
+				<td colspan=4>
+					<button onclick="setPage('refresh')" >刷新</button>
+					<button id="talkEnable" onclick="setTalkEnable(false)" style="width:160px;background-color:rgba(255,201,14,1)">对话(开)</button>
+					<button onclick="exit_program(this)" >退出</button>
+				</td>
+				
+			</tr>
+			
+			<tr>
+				<td colspan=5><h2>底盘IP：<font id="slam_ip">未知</font></h2></td>
+				
+				<td colspan=5></td>
+			</tr>
+			
+		</table>
+		<div class="back" onclick="closeSettings()">返回</div>
+	</div>
+	
+	<!-- 对话提示 -->
+	<div id = "tips" class="tips">
+		<table style="margin-left:20px;">
+			<tr>
+				<td>
+					<div>
+						<font style="color:yellow;font-weight:700">查询天气</font><br>
+						<font>石家庄今天/明天的天气</font><br>
+						<font>北京的天气</font><br>
+						<font>柏林的天气</font><br>
+					</div>
+				</td>
+				<td>
+					<div>
+						<font style="color:yellow;font-weight:700">文学宝库</font><br>
+						<font>背一首唐诗</font><br>
+						<font>背一首XX的诗</font><br>
+						<font>讲一个故事</font><br>
+					</div>
+				</td>
+				<td>
+					<div>
+						<font style="color:yellow;font-weight:700">中文点歌</font><br>
+						<font>唱一首歌</font><br>
+						<font>唱一首XX的歌</font><br>
+						<font>唱一首XX</font><br>
+					</div>
+				</td>
+				<td rowspan="3">
+					<div>
+						<font style="color:yellow;font-weight:700">舞蹈表演</font><br>
+						<font>小苹果</font><br>
+						<font>骑马舞</font><br>
+						<font>太空舞</font><br>
+						<font>飞鹰舞</font><br>
+						<font>太极舞</font><br>
+						<font>大篷车</font><br>
+						<font>西班牙舞</font><br>
+						<font>范吉利斯</font><br>
+						<font>祝你好运</font><br>
+						<font>快乐的心</font><br>
+						<font>跳舞</font>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<div>
+						<font style="color:yellow;font-weight:700">世界时间</font><br>
+						<font>现在几点了</font><br>
+						<font>现在纽约几点了</font><br>
+					</div>
+				</td>
+				<td>
+					<div>
+						<font style="color:yellow;font-weight:700">百科知识</font><br>
+						<font>百科搜索太阳系</font><br>
+						<font>百科搜索鲁迅</font><br>
+					</div>
+				</td>
+				<td rowspan="2">
+					<div>
+						<font style="color:yellow;font-weight:700">轻松聊天</font><br>
+						<font>你好</font><br>
+						<font>握手</font><br>
+						<font>你叫什么名字</font><br>
+						<font>声音开大</font><br>
+						<font>声音开小</font><br>
+						<font>先有鸡还是先有蛋</font><br>
+						<font>……</font><br>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<div>
+						<font style="color:yellow;font-weight:700">简单算术</font><br>
+						<font>100加100等于几</font><br>
+						<font>25的平方根等于多少</font><br>
+					</div>
+				</td>
+				<td>
+					<div>
+						<font style="color:yellow;font-weight:700">垃圾分类</font><br>
+						<font>香蕉皮是什么垃圾</font><br>
+						<font>电池是什么垃圾</font><br>
+
+					</div>
+				</td>
+				
+			</tr>
+		</table>
+		<div class="back" onclick="closeTips()">返回</div>
+	</div>
+	
+	<!--子网页-->
+	<div id = "subPage" class = "settings">
+		<div id = "subPageContent" style="width:100%;height:100%"></div>
+		
+		<div class="back" onclick="closeWebSetting()">返回</div>
+	</div>
+	
+	<!--音效区-->
+	<audio id = "sound"></audio>
+	
+</div>	
+
+</body>
+</html>

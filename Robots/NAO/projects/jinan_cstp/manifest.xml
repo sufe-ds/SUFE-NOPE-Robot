@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<package uuid="jinan_cstp">
+ <names>
+  <name lang="en_US">jinan_cstp</name>
+ </names>
+ <supportedLanguages>
+  <language>en_US</language>
+ </supportedLanguages>
+ <descriptionLanguages>
+  <language>en_US</language>
+ </descriptionLanguages>
+ <contents>
+  <behaviorContent path="behavior_1">
+   <userRequestable/>
+   <nature>interactive</nature>
+   <triggerSentences>
+    <sentence lang="en_US">cstp</sentence>
+    <sentence lang="zh_CN">儿童科技园</sentence>
+   </triggerSentences>
+   <loadingResponses/>
+   <autonomous/>
+   <permissions/>
+  </behaviorContent>
+ </contents>
+</package>

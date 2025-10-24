@@ -1,0 +1,153 @@
+*{
+  -webkit-touch-callout:none;  /*系统默认菜单被禁用*/
+  -webkit-user-select:none; /*webkit浏览器*/
+  -khtml-user-select:none; /*早期浏览器*/
+  -moz-user-select:none; /*火狐*/
+  -ms-user-select:none;  /*IE10*/
+  user-select:none;
+}
+
+body{
+	margin:0 auto;
+}
+
+.level_1{
+	width:1281px; 
+	height:802px;
+	position:fixed;
+	top:0;
+	left:0;
+	overflow:hidden;
+	background-image:url(../pictures/home.jpg);
+	background-repeat:no-repeat;
+	background-size:100% 100%;
+	
+}
+
+.level_2{
+	position:absolute;
+	top:230px;
+	width:1280px;
+	height:572px;
+	
+	text-align:center;
+}
+
+.title_1{
+	font-size:70px;
+	font-family:SimHei;
+	letter-spacing:10px;
+	color:white;
+}
+
+.title_2{
+	font-size:30px;
+	font-family:arial;
+	letter-spacing:5px;
+	color:white;
+}
+
+.xunfei{
+	width:1280px;
+	height:320px;
+	margin-top:230px;
+	background-color:rgba(255,255,255,0.9);
+	text-align:left;
+	padding-top:10px;
+	overflow:auto;
+}
+
+
+.pop {
+    display: none;
+    position: fixed; 
+    z-index: 2; 
+	left: 0;
+    top: 0;
+    width: 1281px; 
+    height: 802px; 
+    overflow: hidden; 
+    background-color: rgba(0,0,0,0.5); 
+	text-align:center;
+	color: rgba(0,0,0,0.90);
+}
+
+.pop .inner{
+	width:1281px;
+	height:530px;
+	position:absolute;
+	margin-top:120px;
+	text-align:left;
+	padding-top:10px;
+	/* overflow:hidden; */
+	background-color:transparent;
+}
+/* 
+.tipsButton{
+	width:200px;
+	height:200px;
+	color:white;
+	font-size:50px;
+	background-color:rgba(15,36,99,0.6);
+	box-shadow:0px 0px 50px rgba(15,36,99,1);
+	border:5px solid white;
+	border-radius:50%
+} */
+
+.tipsButton{
+	width:200px;
+	height:200px;
+	color:white;
+	font-size:50px;
+	background-color:rgba(29,73,97,0.7);
+	box-shadow:0px 0px 50px rgba(15,36,99,1);
+	border:5px double white;
+	border-radius:50%;
+	/* margin:0 40px; */
+}
+
+.tips{
+	position:fixed;
+	top:280px;
+	width:1281px;
+	height:522px;
+	background-color:rgba(29,73,97,0.8);
+	color:white;
+	display:none;
+	z-index: 1;
+	font-size:25px;
+}
+
+.tips table{
+	width:1261px;
+	height:100%;
+	text-align:left;
+}
+.tips table tr{
+	height:100%;
+	vertical-align:top;
+}
+
+.tips table tr td{
+	width:20%; 
+}
+
+.back{
+	width:150px;
+	height:80px;
+	position:absolute;
+	bottom:0;
+	right:0;
+	color:white;
+	font-size:60px;
+	font-weight:700;
+	border-radius:40px 0px 0px 0px;
+	border:6px solid white;
+	background-color:rgba(0,0,0,0.3);
+	text-align:center;
+}
+
+
+button:focus{
+	outline: none;
+	}

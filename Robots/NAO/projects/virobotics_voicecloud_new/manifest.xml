@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<package uuid="virobotics_voicecloud_new">
+ <names>
+  <name lang="en_US">virobotics_voicecloud_new</name>
+ </names>
+ <supportedLanguages>
+  <language>zh_CN</language>
+  <language>en_US</language>
+ </supportedLanguages>
+ <descriptionLanguages>
+  <language>zh_CN</language>
+  <language>en_US</language>
+ </descriptionLanguages>
+ <contents>
+  <behaviorContent path="behavior_1">
+   <userRequestable/>
+   <nature>interactive</nature>
+   <triggerSentences>
+    <sentence lang="zh_CN">语音云服务</sentence>
+    <sentence lang="en_US">day day up</sentence>
+   </triggerSentences>
+   <loadingResponses/>
+   <autonomous/>
+   <permissions/>
+  </behaviorContent>
+ </contents>
+</package>

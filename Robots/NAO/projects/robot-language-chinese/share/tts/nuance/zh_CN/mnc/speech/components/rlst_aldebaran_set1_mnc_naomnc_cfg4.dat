@@ -1,0 +1,16 @@
+[header]
+language = mnc
+charset = utf-8
+
+[data]
+/(\A.)/   -->   \e\\style\=reset\\$1
+/——/   -->   ：
+/\e\\style\=(neutral|joyful|didactic|reset)\\\s*(?=\e\\style\=(neutral|joyful|didactic|reset)\\)/   -->   ""
+/(\?|？|\?"|\?”|？”|？")\s*\e\\style\=neutral\\/i   -->   \e\\nlu=E_CLASS:neutralstyle\\\e\\nlu=E_CLASS:joyfulstyle\\\e\\nlu=E_CLASS:didacticstyle\\\e\\toi=lhp:dummmy\\%\e\\toi=orth\\?\e\\eos=1\\\e\\nlu=S_CLASS:neutralstyle\\\e\\rate=100\\\e\\pitch=115\\\e\\domain=neutral\\
+/\e\\style\=neutral\\/i   -->   \e\\nlu=E_CLASS:neutralstyle\\\e\\nlu=E_CLASS:joyfulstyle\\\e\\nlu=E_CLASS:didacticstyle\\\e\\toi=lhp:dummmy\\%\e\\toi=orth\\\e\\eos=1\\\e\\nlu=S_CLASS:neutralstyle\\\e\\rate=100\\\e\\pitch=115\\\e\\domain=neutral\\
+/(\?|？|\?"|\?”|？”|？")\s*\e\\style\=joyful\\/i   -->   \e\\nlu=E_CLASS:neutralstyle\\\e\\nlu=E_CLASS:joyfulstyle\\\e\\nlu=E_CLASS:didacticstyle\\\e\\toi=lhp:dummmy\\%\e\\toi=orth\\?\e\\eos=1\\\e\\nlu=S_CLASS:joyfulstyle\\\e\\rate=100\\\e\\pitch=115\\\e\\domain=joyful\\
+/\e\\style\=joyful\\/i   -->   \e\\nlu=E_CLASS:neutralstyle\\\e\\nlu=E_CLASS:joyfulstyle\\\e\\nlu=E_CLASS:didacticstyle\\\e\\toi=lhp:dummmy\\%\e\\toi=orth\\\e\\eos=1\\\e\\nlu=S_CLASS:joyfulstyle\\\e\\rate=100\\\e\\pitch=115\\\e\\domain=joyful\\
+/(\?|？|\?"|\?”|？”|？")\s*\e\\style\=didactic\\/i   -->   \e\\nlu=E_CLASS:neutralstyle\\\e\\nlu=E_CLASS:joyfulstyle\\\e\\nlu=E_CLASS:didacticstyle\\\e\\toi=lhp:dummmy\\%\e\\toi=orth\\?\e\\eos=1\\\e\\nlu=S_CLASS:didacticstyle\\\e\\rate=95\\\e\\pitch=115\\\e\\domain=didactic\\
+/\e\\style\=didactic\\/i   -->   \e\\nlu=E_CLASS:neutralstyle\\\e\\nlu=E_CLASS:joyfulstyle\\\e\\nlu=E_CLASS:didacticstyle\\\e\\toi=lhp:dummmy\\%\e\\toi=orth\\\e\\eos=1\\\e\\nlu=S_CLASS:didacticstyle\\\e\\rate=95\\\e\\pitch=115\\\e\\domain=didactic\\
+/(\?|？|\?"|\?”|？”|？")\s*\e\\style\=reset\\/i   -->   \e\\nlu=E_CLASS:neutralstyle\\\e\\nlu=E_CLASS:joyfulstyle\\\e\\nlu=E_CLASS:didacticstyle\\\e\\toi=lhp:dummmy\\%\e\\toi=orth\\?\e\\eos=1\\\e\\rate=100\\\e\\pitch=115\\\e\\domain=\\
+/\e\\style\=reset\\/i   -->   \e\\nlu=E_CLASS:neutralstyle\\\e\\nlu=E_CLASS:joyfulstyle\\\e\\nlu=E_CLASS:didacticstyle\\\e\\toi=lhp:dummmy\\%\e\\toi=orth\\\e\\eos=1\\\e\\rate=100\\\e\\pitch=115\\\e\\domain=\\

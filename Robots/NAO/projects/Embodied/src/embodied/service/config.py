@@ -1,4 +1,4 @@
-"""运行配置：环境变量 / .env / CLI 覆盖。"""
+"""运行配置：环境变量 / .env / CLI 覆盖（外部输入，属基础设施）。"""
 
 from __future__ import annotations
 
@@ -11,10 +11,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 def default_movement_dir() -> Path:
     """默认动作目录：Robots/NAO/movements。
 
-    本文件位于 ``.../projects/Embodied/src/embodied/config.py``，
-    ``parents[4]`` 即 ``Robots/NAO``。
+    本文件位于 ``.../projects/Embodied/src/embodied/service/config.py``，
+    ``parents[5]`` 即 ``Robots/NAO``。
     """
-    return Path(__file__).resolve().parents[4] / "movements"
+    return Path(__file__).resolve().parents[5] / "movements"
 
 
 DEFAULT_ALLOWED_SERVICES = [

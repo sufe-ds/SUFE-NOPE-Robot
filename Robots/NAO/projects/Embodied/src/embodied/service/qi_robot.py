@@ -1,11 +1,9 @@
-"""Robot 服务层：所有 NAOqi 调用都集中在这里。
+"""qi / NAOqi 机器人适配器（RobotPort 的具体实现）。
 
 线程模型：
-- ``_motion_lock`` 串行化运动类服务（ALMotion / ALRobotPosture / 动作播放），
-  一次动作会长时间持有它，因此 ``stop_all`` 故意绕过该锁，保证随时可急停。
-- ``_call_lock`` 串行化其余 I/O 类调用（TTS、LED、音量、ASR、Memory）。
-- 两类锁互相独立，所以跳舞时仍可说话、拍照。
-- ``_resolve`` 只负责 ``session.service()`` 的解析与缓存。
+- ``_motion_lock`` 串行化运动类服务；长动作会长时间持有它，
+  因此 ``stop_all`` 故意绕过该锁，保证随时急停。
+- ``_call_lock`` 串行化其余 I/O；两类锁互相独立，跳舞时仍可说话、拍照。
 """
 
 from __future__ import annotations
@@ -16,16 +14,14 @@ import threading
 import time
 import uuid
 from contextlib import contextmanager
-from dataclasses import dataclass
 from typing import Any, Iterator
 
 import qi
 from PIL import Image
 
-from .config import Settings
-from .errors import (
+from ..domain.entities import Movement, MovementResult, SpeechResult
+from ..domain.errors import (
     ActionTimeoutError,
-    ForbiddenCallError,
     RobotCallError,
     RobotError,
     RobotUnreachableError,
@@ -35,36 +31,19 @@ from .errors import (
     UnknownServiceMethodError,
     ValidationError,
 )
-from .movements import MovementLibrary
+from ..domain.values import Color
+from .config import Settings
+from .ports import RobotPort
 
 _MOTION_SERVICES = frozenset({"ALMotion", "ALRobotPosture"})
-_DENY_METHODS = {"shutdown", "reboot", "restart", "system"}
 _COLOR_SPACE_RGB = 11
 
 
 def connect(ip: str, port: int = 9559) -> qi.Session:
-    """连接 NAOqi，返回 qi.Session（与旧版行为一致）。"""
+    """连接 NAOqi，返回 qi.Session（兼容旧版）。"""
     session = qi.Session()
     session.connect(f"tcp://{ip}:{port}")
     return session
-
-
-def parse_color(color: str | int) -> int:
-    if isinstance(color, bool):
-        raise ValidationError(f"非法颜色：{color!r}")
-    if isinstance(color, int):
-        return color & 0xFFFFFF
-    text = str(color).strip().lstrip("#")
-    if text.lower().startswith("0x"):
-        text = text[2:]
-    if len(text) == 3:
-        text = "".join(ch * 2 for ch in text)
-    if len(text) != 6:
-        raise ValidationError(f"非法颜色：{color!r}")
-    try:
-        return int(text, 16)
-    except ValueError as exc:
-        raise ValidationError(f"非法颜色：{color!r}") from exc
 
 
 def to_jsonable(value: Any) -> Any:
@@ -79,39 +58,10 @@ def to_jsonable(value: Any) -> Any:
     return str(value)
 
 
-def _is_denied_method(method: str) -> bool:
-    lowered = str(method).lower()
-    return lowered in _DENY_METHODS or "unregister" in lowered
-
-
-@dataclass
-class MovementResult:
-    name: str
-    duration_s: float
-    joints: int
-
-    def to_dict(self) -> dict:
-        return {"name": self.name, "duration_s": self.duration_s, "joints": self.joints}
-
-
-@dataclass
-class AsrResult:
-    recognized: bool
-    word: str | None
-    confidence: float
-
-    def to_dict(self) -> dict:
-        return {
-            "recognized": self.recognized,
-            "word": self.word,
-            "confidence": self.confidence,
-        }
-
-
 class CameraStreamer:
     """后台持续订阅摄像头，缓存最新一帧 JPEG。"""
 
-    def __init__(self, robot: "Robot", camera: int, resolution: int, fps: int) -> None:
+    def __init__(self, robot: "QiRobot", camera: int, resolution: int, fps: int) -> None:
         self.robot = robot
         self.camera = camera
         self.resolution = resolution
@@ -146,7 +96,7 @@ class CameraStreamer:
             self._handle = video.subscribeCamera(
                 self.name, self.camera, self.resolution, _COLOR_SPACE_RGB, self.fps
             )
-        except Exception as exc:  # noqa: BLE001 - 记录后退出线程
+        except Exception as exc:  # noqa: BLE001
             self._error = str(exc)
             return
         interval = 1.0 / self.fps
@@ -168,7 +118,7 @@ class CameraStreamer:
                             self._frame_ts = time.time()
                             self.width, self.height = width, height
                         self._error = None
-                except Exception as exc:  # noqa: BLE001 - 帧失败不应终止线程
+                except Exception as exc:  # noqa: BLE001
                     self._error = str(exc)
                 elapsed = time.perf_counter() - started
                 self._stop.wait(max(0.0, interval - elapsed))
@@ -217,15 +167,9 @@ class CameraStreamer:
             self._thread = None
 
 
-class Robot:
-    def __init__(
-        self,
-        settings: Settings,
-        session: qi.Session | None = None,
-        movements: MovementLibrary | None = None,
-    ) -> None:
+class QiRobot(RobotPort):
+    def __init__(self, settings: Settings, session: qi.Session | None = None) -> None:
         self.settings = settings
-        self.movements = movements or MovementLibrary(settings.movement_dir)
         self._session = session
         self._services: dict[str, Any] = {}
         self._motion_lock = threading.RLock()
@@ -245,9 +189,7 @@ class Robot:
         if self._session is not None:
             return
         try:
-            self._session = connect(
-                self.settings.nao_ip, self.settings.nao_port
-            )
+            self._session = connect(self.settings.nao_ip, self.settings.nao_port)
         except Exception as exc:  # noqa: BLE001
             raise RobotUnreachableError(
                 f"无法连接 NAO {self.settings.nao_ip}:{self.settings.nao_port}",
@@ -283,9 +225,7 @@ class Robot:
         try:
             func = getattr(proxy, method)
         except AttributeError as exc:
-            raise UnknownServiceMethodError(
-                f"{service} 没有方法 {method}"
-            ) from exc
+            raise UnknownServiceMethodError(f"{service} 没有方法 {method}") from exc
         try:
             return func(*args)
         except RobotError:
@@ -296,10 +236,7 @@ class Robot:
     def _acquire(self, lock: threading.RLock, timeout: float | None) -> None:
         if timeout is None:
             timeout = self.settings.action_timeout_s
-        if timeout < 0:
-            acquired = lock.acquire()
-        else:
-            acquired = lock.acquire(timeout=timeout)
+        acquired = lock.acquire() if timeout < 0 else lock.acquire(timeout=timeout)
         if not acquired:
             raise ActionTimeoutError("机器人正忙，请稍后重试")
 
@@ -311,7 +248,7 @@ class Robot:
         finally:
             self._motion_lock.release()
 
-    def call(self, service: str, method: str, *args: Any, timeout: float | None = None) -> Any:
+    def _call(self, service: str, method: str, *args: Any, timeout: float | None = None) -> Any:
         lock = self._motion_lock if service in _MOTION_SERVICES else self._call_lock
         self._acquire(lock, timeout)
         try:
@@ -321,7 +258,7 @@ class Robot:
 
     def ping(self) -> bool:
         try:
-            self.call("ALTextToSpeech", "getLanguage")
+            self._call("ALTextToSpeech", "getLanguage")
             return True
         except RobotError:
             return False
@@ -342,16 +279,16 @@ class Robot:
         if not text:
             return
         if animated:
-            self.call("ALAnimatedSpeech", "say", text)
+            self._call("ALAnimatedSpeech", "say", text)
             return
         lang = language or "Chinese"
         if lang != self._tts_language:
-            self.call("ALTextToSpeech", "setLanguage", lang)
+            self._call("ALTextToSpeech", "setLanguage", lang)
             self._tts_language = lang
-        self.call("ALTextToSpeech", "say", text)
+        self._call("ALTextToSpeech", "say", text)
 
     def stop_speaking(self) -> None:
-        self.call("ALTextToSpeech", "stopAll")
+        self._call("ALTextToSpeech", "stopAll")
 
     # -- 姿态与运动 ---------------------------------------------------------
     def _wake(self) -> None:
@@ -370,7 +307,7 @@ class Robot:
         self._posture = None
 
     def list_postures(self) -> list[str]:
-        return list(self.call("ALRobotPosture", "getPostureList"))
+        return list(self._call("ALRobotPosture", "getPostureList"))
 
     def go_to_posture(self, name: str, speed: float = 0.5) -> str:
         postures = self.list_postures()
@@ -382,9 +319,7 @@ class Robot:
         self._posture = name
         return name
 
-    def set_angles(
-        self, names: list[str], angles: list[float], speed: float = 0.2
-    ) -> None:
+    def set_angles(self, names: list[str], angles: list[float], speed: float = 0.2) -> None:
         if len(names) != len(angles):
             raise ValidationError("names 与 angles 长度不一致")
         with self._motion():
@@ -400,41 +335,34 @@ class Robot:
             self._wake()
             self._invoke("ALMotion", "moveTo", (float(x), float(y), float(theta)))
 
-    def stop_motion(self) -> None:
-        self._invoke("ALMotion", "killAll")
-
     def stop_all(self) -> None:
-        for service, method in (
-            ("ALMotion", "killAll"),
-            ("ALTextToSpeech", "stopAll"),
-        ):
+        for service, method in (("ALMotion", "killAll"), ("ALTextToSpeech", "stopAll")):
             try:
                 self._invoke(service, method)
-            except Exception:  # noqa: BLE001 - 急停必须尽力而为
+            except Exception:  # noqa: BLE001 - 急停尽力而为
                 pass
 
-    # -- 动作 ---------------------------------------------------------------
-    def list_movements(self):
-        return self.movements.list()
-
-    def play_movement(self, name: str) -> MovementResult:
-        posture, names, times, angles = self.movements.prepare(name)
-        if not names:
-            raise UnknownMovementError(f"动作 {name} 不含关键帧")
+    def play_trajectory(self, movement: Movement) -> MovementResult:
+        if not movement.names:
+            raise UnknownMovementError(f"动作 {movement.name} 不含关键帧")
         started = time.perf_counter()
         with self._motion(timeout=-1):
             self._wake()
-            if posture:
+            if movement.posture:
                 try:
-                    self._invoke("ALRobotPosture", "goToPosture", (posture, 0.5))
+                    self._invoke("ALRobotPosture", "goToPosture", (movement.posture, 0.5))
                 except RobotError:
                     pass
-            self._invoke("ALMotion", "angleInterpolationBezier", (names, times, angles))
-            self._posture = posture or self._posture
+            self._invoke(
+                "ALMotion",
+                "angleInterpolationBezier",
+                (movement.names, movement.times, movement.angles),
+            )
+            self._posture = movement.posture or self._posture
         return MovementResult(
-            name=name,
+            name=movement.name,
             duration_s=round(time.perf_counter() - started, 3),
-            joints=len(names),
+            joints=len(movement.names),
         )
 
     # -- 摄像头 -------------------------------------------------------------
@@ -467,9 +395,7 @@ class Robot:
         streamer = self._ensure_camera(resolution)
         frame = streamer.wait_for_frame(timeout=3.0)
         if frame is None:
-            raise ServiceUnavailableError(
-                "摄像头暂无可用的画面", detail=streamer.error
-            )
+            raise ServiceUnavailableError("摄像头暂无可用的画面", detail=streamer.error)
         return frame
 
     def camera_frame(self) -> bytes | None:
@@ -479,7 +405,11 @@ class Robot:
 
     def camera_info(self) -> dict:
         if self._camera is None:
-            return {"camera": 0, "resolution": self.settings.camera_resolution, "age_s": None}
+            return {
+                "camera": 0,
+                "resolution": self.settings.camera_resolution,
+                "age_s": None,
+            }
         return self._camera.info()
 
     # -- 语音识别 -----------------------------------------------------------
@@ -490,68 +420,57 @@ class Robot:
         word_spotting: bool = True,
         language: str | None = None,
         min_confidence: float = 0.0,
-    ) -> AsrResult:
+    ) -> SpeechResult:
         if not vocabulary:
             raise ValidationError("vocabulary 不能为空")
         token = f"embodied_asr_{uuid.uuid4().hex[:6]}"
-        self.call("ALSpeechRecognition", "setLanguage", language or self.settings.asr_language)
-        self.call("ALSpeechRecognition", "setVocabulary", list(vocabulary), bool(word_spotting))
-        self.call("ALSpeechRecognition", "subscribe", token)
+        self._call("ALSpeechRecognition", "setLanguage", language or "Chinese")
+        self._call("ALSpeechRecognition", "setVocabulary", list(vocabulary), bool(word_spotting))
+        self._call("ALSpeechRecognition", "subscribe", token)
         try:
             try:
-                self.call("ALMemory", "removeData", "WordRecognized")
+                self._call("ALMemory", "removeData", "WordRecognized")
             except RobotError:
                 pass
             deadline = time.time() + float(timeout_s)
             while time.time() < deadline:
                 try:
-                    detected = self.call("ALMemory", "getData", "WordRecognized")
+                    detected = self._call("ALMemory", "getData", "WordRecognized")
                 except RobotError:
                     detected = None
                 if detected and len(detected) >= 2 and detected[0]:
                     word, confidence = str(detected[0]), float(detected[1])
                     if confidence >= min_confidence:
-                        return AsrResult(True, word, confidence)
+                        return SpeechResult(True, word, confidence)
                 time.sleep(0.2)
-            return AsrResult(False, None, 0.0)
+            return SpeechResult(False, None, 0.0)
         finally:
             try:
-                self.call("ALSpeechRecognition", "unsubscribe", token)
+                self._call("ALSpeechRecognition", "unsubscribe", token)
             except RobotError:
                 pass
 
     # -- LED / 音量 ---------------------------------------------------------
-    def set_leds(
-        self, name: str = "FaceLeds", color: str | int = "#00A0FF", duration: float = 0.5
-    ) -> None:
-        self.call("ALLeds", "fadeRGB", name, parse_color(color), float(duration))
+    def set_leds(self, name: str, color: Color, duration: float) -> None:
+        self._call("ALLeds", "fadeRGB", name, color.to_int(), float(duration))
 
-    def leds_off(self, name: str = "FaceLeds") -> None:
-        self.call("ALLeds", "off", name)
+    def leds_off(self, name: str) -> None:
+        self._call("ALLeds", "off", name)
 
     def set_led_intensity(self, name: str, intensity: float) -> None:
-        self.call("ALLeds", "setIntensity", name, float(intensity))
+        self._call("ALLeds", "setIntensity", name, float(intensity))
 
-    def rasta(self, duration: float = 1.0) -> None:
-        self.call("ALLeds", "rasta", float(duration))
+    def rasta(self, duration: float) -> None:
+        self._call("ALLeds", "rasta", float(duration))
 
     def get_volume(self) -> int:
-        return int(self.call("ALAudioDevice", "getOutputVolume"))
+        return int(self._call("ALAudioDevice", "getOutputVolume"))
 
     def set_volume(self, volume: int) -> int:
         value = max(0, min(100, int(volume)))
-        self.call("ALAudioDevice", "setOutputVolume", value)
+        self._call("ALAudioDevice", "setOutputVolume", value)
         return value
 
-    # -- 逃生舱 -------------------------------------------------------------
+    # -- 逃生舱（策略在服务层，这里只做调用） --------------------------------
     def call_service(self, service: str, method: str, args: list | None = None) -> Any:
-        if not self.settings.enable_escape_hatch:
-            raise ForbiddenCallError(
-                "逃生舱未启用（设置 EMBODIED_ENABLE_ESCAPE_HATCH=1 开启）"
-            )
-        allowed = self.settings.allowed_services
-        if "*" not in allowed and service not in allowed:
-            raise ForbiddenCallError(f"服务 {service} 不在白名单", detail=allowed)
-        if _is_denied_method(method):
-            raise ForbiddenCallError(f"方法 {method} 被禁止")
-        return to_jsonable(self.call(service, method, *(args or [])))
+        return to_jsonable(self._call(service, method, *(args or [])))

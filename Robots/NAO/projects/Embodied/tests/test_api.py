@@ -1,4 +1,4 @@
-"""REST API 测试（使用 FakeRobot，无需机器人）。"""
+"""REST API 测试（dry-run 使用 FakeRobot，无需机器人）。"""
 
 from __future__ import annotations
 
@@ -8,14 +8,12 @@ import httpx
 import pytest
 
 from embodied.app import create_app
-from embodied.config import Settings
-from embodied.fake import FakeRobot
+from embodied.service.config import Settings
 
 
 @pytest.fixture
 def app():
-    settings = Settings(dry_run=True)
-    return create_app(settings, robot=FakeRobot(settings))
+    return create_app(Settings(dry_run=True))
 
 
 @pytest.fixture
@@ -97,8 +95,7 @@ async def test_escape_hatch_disabled(client) -> None:
 
 
 async def test_escape_hatch_enabled() -> None:
-    settings = Settings(dry_run=True, enable_escape_hatch=True)
-    app = create_app(settings, robot=FakeRobot(settings))
+    app = create_app(Settings(dry_run=True, enable_escape_hatch=True))
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         response = await c.post(

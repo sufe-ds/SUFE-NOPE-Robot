@@ -21,27 +21,27 @@ Python 3.12 + `uv` + [`qi`](https://github.com/aldebaran/libqi-python)（NAOqi �
 
 ```sh
 uv sync
-uv run embodied --ip <robot-ip> --say "文本"          # 旧用法保留
-uv run embodied serve --ip <robot-ip> --host 0.0.0.0 --http-port 8000
-uv run embodied serve --dry-run                        # 不接机器人
-uv run pytest                                          # 用 FakeRobot，无需机器人
+NAO_IP=<robot-ip> uv run uvicorn embodied.app:app --host 0.0.0.0 --port 8000
+EMBODIED_DRY_RUN=1 uv run uvicorn embodied.app:app --port 8000   # 不接机器人
+uv run pytest                                                    # 用 FakeRobot，无需机器人
 ```
 
-- 入口改到 `src/embodied/cli.py:main`（`pyproject.toml` 脚本 `embodied`）；`main()` 里 `serve` 走服务、否则保留旧的一次性 `--say`。
-- 连接地址优先级：CLI `--ip/--port` > 环境变量 `NAO_IP`/`NAO_PORT` > 默认 `127.0.0.1:9559`。
+- 无 CLI / console script：服务用 `uvicorn embodied.app:app` 启动，配置走环境变量或 `.env`（`Settings` 在 `service/config.py`，`app = create_app()` 在 `app.py` 模块级）。
+- 连接地址：环境变量 `NAO_IP`/`NAO_PORT` > 默认 `127.0.0.1:9559`。
 - 有 pytest（`tests/`，`asyncio_mode=auto`）；无 lint / typecheck 配置，不要臆造。
 
-### 服务架构（`src/embodied/`）
+### 分层架构（`src/embodied/`，DDD，依赖单向）
 
-- `robot.py`：唯一接触 `qi` 的层。`_motion_lock` 串行化运动，`_call_lock` 管其余 I/O，二者独立；`stop_all` 绕过锁以便急停。
-- `movements.py`：用 `importlib` 加载 `Robots/NAO/movements/*.py` 并展平。
-- `jobs.py`：单后台 worker，长动作返回 `job_id` 轮询。
-- `api.py`（REST，含 `/health`、`/api/*`）、`mcp_server.py`（FastMCP 工具）、`app.py`（`create_app` + `combine_lifespans` 挂载 `/mcp`）。
-- `fake.py`：`--dry-run` 与测试用的假机器人；`config.py`：`pydantic-settings`。
+依赖方向 `domain ← service ← api`；组装根 `container.py` / `app.py` 可依赖所有层。**不要跨层或反向依赖。**
+
+- `domain/`：纯领域（实体 `entities.py`、值对象 `values.py`、`trajectory.py` 轨迹展平、`errors.py`）。不得导入 qi/FastAPI/pydantic/外层。
+- `service/`：应用服务 + `ports.py` 抽象端口（`RobotPort` / `MovementRepository` / `JobQueue`）+ 具体实现（`qi_robot.py` 唯一接触 `qi`，`_motion_lock`/`_call_lock`，`stop_all` 绕过锁；`fake_robot.py`、`movement_files.py`、`thread_jobs.py`（单后台 worker）、`config.py`）。本项目无数据库，不单设基础设施层。
+- `api/`：`rest.py`（FastAPI）、`mcp.py`（FastMCP 工具）、`schemas.py`。只依赖 `service`，不得直接调用 `qi`。
+- `container.py`：组装根，把具体实现注入应用服务。
 - Agent 在 Windows 时：用 `http://localhost:8000/mcp/`（WSL localhost 转发），stdio-only 客户端用 `uvx fastmcp-remote http://localhost:8000/mcp/ --auth none`。
 
 ## 约定
 
 - 文档与注释以中文为主。
-- 新代码放 `src/embodied/`，保持 CLI 入口 `embodied`（`embodied.cli:main`）。
+- 新代码放 `src/embodied/`，保持入口 `embodied.app:app`（服务）；不要引入 CLI。
 - 用 `qi` 的方式与旧的 Python 2 `naoqi.ALProxy` 不同：`qi.Session().connect("tcp://<ip>:9559")`，再 `session.service("ALTextToSpeech")`。

@@ -1,4 +1,4 @@
-"""统一的错误类型，供 REST / MCP 映射为一致的响应。"""
+"""领域错误：业务语义的统一异常，供 API / MCP 映射为响应。"""
 
 from __future__ import annotations
 

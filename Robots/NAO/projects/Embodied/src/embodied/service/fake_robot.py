@@ -1,4 +1,4 @@
-"""不连接机器人的假实现，用于 ``--dry-run`` 与测试。"""
+"""不连接机器人的假实现（RobotPort），用于 ``--dry-run`` 与测试。"""
 
 from __future__ import annotations
 
@@ -7,30 +7,25 @@ import time
 
 from PIL import Image
 
+from ..domain.entities import Movement, MovementResult, SpeechResult
+from ..domain.errors import ServiceUnavailableError, UnknownPostureError, ValidationError
+from ..domain.values import Color
 from .config import Settings
-from .errors import (
-    ForbiddenCallError,
-    ServiceUnavailableError,
-    UnknownMovementError,
-    UnknownPostureError,
-)
-from .movements import MovementLibrary
-from .robot import AsrResult, MovementResult
+from .ports import RobotPort
 
 _POSTURES = ["Stand", "StandInit", "StandZero", "Crouch", "Sit", "LyingBelly", "LyingBack"]
 
 
-class FakeRobot:
+class FakeRobot(RobotPort):
     def __init__(self, settings: Settings | None = None) -> None:
         self.settings = settings or Settings(dry_run=True)
-        self.movements = MovementLibrary(self.settings.movement_dir)
         self._awake = False
         self._posture: str | None = None
         self._volume = 50
         self._tts_language: str | None = None
         self._camera_started = False
 
-    # -- 连接 / 状态 -------------------------------------------------------
+    # -- 生命周期 / 状态 ---------------------------------------------------
     @property
     def connected(self) -> bool:
         return True
@@ -61,7 +56,7 @@ class FakeRobot:
     def stop_speaking(self) -> None:
         pass
 
-    # -- 姿态与运动 --------------------------------------------------------
+    # -- 运动 --------------------------------------------------------------
     def wake_up(self) -> None:
         self._awake = True
 
@@ -85,20 +80,14 @@ class FakeRobot:
     def move(self, x: float, y: float, theta: float) -> None:
         self._awake = True
 
-    def stop_motion(self) -> None:
-        pass
-
     def stop_all(self) -> None:
         pass
 
-    # -- 动作 --------------------------------------------------------------
-    def list_movements(self):
-        return self.movements.list()
-
-    def play_movement(self, name: str) -> MovementResult:
-        _, _, times, _ = self.movements.prepare(name)
+    def play_trajectory(self, movement: Movement) -> MovementResult:
         time.sleep(0.05)
-        return MovementResult(name=name, duration_s=0.05, joints=len(times))
+        return MovementResult(
+            name=movement.name, duration_s=0.05, joints=len(movement.names)
+        )
 
     # -- 摄像头 ------------------------------------------------------------
     def start_camera(self) -> None:
@@ -119,9 +108,7 @@ class FakeRobot:
         return self._jpeg()
 
     def camera_frame(self) -> bytes | None:
-        if not self._camera_started:
-            return None
-        return self._jpeg()
+        return self._jpeg() if self._camera_started else None
 
     def camera_info(self) -> dict:
         return {
@@ -142,22 +129,22 @@ class FakeRobot:
         word_spotting: bool = True,
         language: str | None = None,
         min_confidence: float = 0.0,
-    ) -> AsrResult:
+    ) -> SpeechResult:
         if not vocabulary:
-            raise UnknownMovementError("vocabulary 不能为空")
-        return AsrResult(True, vocabulary[0], 1.0)
+            raise ValidationError("vocabulary 不能为空")
+        return SpeechResult(True, vocabulary[0], 1.0)
 
     # -- LED / 音量 --------------------------------------------------------
-    def set_leds(self, name: str = "FaceLeds", color: str | int = "#00A0FF", duration: float = 0.5) -> None:
+    def set_leds(self, name: str, color: Color, duration: float) -> None:
         pass
 
-    def leds_off(self, name: str = "FaceLeds") -> None:
+    def leds_off(self, name: str) -> None:
         pass
 
     def set_led_intensity(self, name: str, intensity: float) -> None:
         pass
 
-    def rasta(self, duration: float = 1.0) -> None:
+    def rasta(self, duration: float) -> None:
         pass
 
     def get_volume(self) -> int:
@@ -167,8 +154,6 @@ class FakeRobot:
         self._volume = max(0, min(100, int(volume)))
         return self._volume
 
-    # -- 逃生舱 ------------------------------------------------------------
+    # -- 逃生舱（策略在服务层） --------------------------------------------
     def call_service(self, service: str, method: str, args: list | None = None) -> dict:
-        if not self.settings.enable_escape_hatch:
-            raise ForbiddenCallError("逃生舱未启用（dry-run）")
         return {"fake": True, "service": service, "method": method, "args": args}

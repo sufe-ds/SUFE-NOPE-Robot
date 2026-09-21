@@ -1,6 +1,6 @@
 # Embodied
 
-NAO 机器人具身智能交互项目，基于 Python 3.12 + [qi](https://github.com/aldebaran/libqi-python)（NAOqi 的 Python 3 官方绑定）。既保留命令行一次性说话，也提供 **FastAPI REST 服务**与 **MCP 工具**，让 LLM Agent 直接操控机器人。
+NAO 机器人具身智能交互项目，基于 Python 3.12 + [qi](https://github.com/aldebaran/libqi-python)（NAOqi 的 Python 3 官方绑定）。提供 **FastAPI REST 服务**与 **MCP 工具**，让 LLM Agent 直接操控机器人。
 
 ## 环境
 
@@ -16,20 +16,13 @@ uv sync
 
 ## 使用
 
-连接机器人并让 NAO 说话（旧用法，保持不变）：
+启动服务（机器人地址等配置见下方「配置」，默认 `127.0.0.1:9559`）：
 
 ```sh
-uv run embodied --ip 192.168.2.34 --say "你好，我是 Embodied"
-```
+NAO_IP=192.168.2.34 uv run uvicorn embodied.app:app --host 0.0.0.0 --port 8000
 
-也可用环境变量 `NAO_IP` / `NAO_PORT` 指定机器人地址与端口（默认 `127.0.0.1:9559`）。
-
-### 启动服务
-
-```sh
-uv run embodied serve --ip 192.168.2.34 --host 0.0.0.0 --http-port 8000
 # 不接机器人、纯本地体验：
-uv run embodied serve --dry-run
+EMBODIED_DRY_RUN=1 uv run uvicorn embodied.app:app --host 0.0.0.0 --port 8000
 ```
 
 - REST 文档：`http://localhost:8000/docs`
@@ -77,13 +70,25 @@ uv run embodied serve --dry-run
 ## 开发
 
 ```sh
-uv run pytest          # 全部使用 FakeRobot，无需机器人
-uv run embodied serve --dry-run
+uv run pytest                                                     # 全部使用 FakeRobot，无需机器人
+EMBODIED_DRY_RUN=1 uv run uvicorn embodied.app:app --port 8000    # dry-run 起服务
 ```
 
-### 开发笔记
+### 架构
+
+领域驱动分层，依赖方向单向：`domain ← service ← api`。
+
+- `domain/` — 纯领域层：实体、值对象、领域函数（轨迹展平）、领域错误。不依赖任何外层。
+- `service/` — 服务层：应用服务 + `ports.py` 抽象端口（`RobotPort` / `MovementRepository` / `JobQueue`）+ 具体实现（`qi_robot.py`、`fake_robot.py`、`movement_files.py`、`thread_jobs.py`、`config.py`）。本项目没有数据库，故不单设基础设施层。
+- `api/` — 交付层：`rest.py`（FastAPI）、`mcp.py`（FastMCP）、`schemas.py`、错误映射。依赖服务层，不直接接触 `qi`。
+- `container.py` / `app.py` — 组装根：把具体实现注入应用服务，再交给 API。
+
+依赖倒置：应用服务依赖 `service/ports.py` 的抽象；具体实现也依赖该抽象（实现它），由 `container.py` 注入。抽象不依赖具体，具体依赖抽象；领域层不依赖任何外层。
+
+## 开发笔记
 
 - `qi.Session().connect("tcp://<ip>:9559")`，再用 `session.service("ALTextToSpeech")` 获取服务。
 - `qi` 取代了 Python 2 的 `naoqi.ALProxy`，语法略有不同。
-- 运动类服务（`ALMotion`/`ALRobotPosture`）由 `_motion_lock` 串行化，长动作会长时间持有该锁；`stop_all` 故意绕过锁以便随时急停。
-- 动作模块（`Robots/NAO/movements/*.py`）是 LabVIEW 导出的数据，`main()` 返回 `(Posture, time, movements)`，由 `movements.py` 展平后交给 `ALMotion.angleInterpolationBezier`。
+- 运动类服务（`ALMotion`/`ALRobotPosture`）由 `QiRobot._motion_lock` 串行化，长动作会长时间持有该锁；`stop_all` 故意绕过锁以便随时急停。
+- 动作模块（`Robots/NAO/movements/*.py`）是 LabVIEW 导出的数据，`main()` 返回 `(Posture, time, movements)`，由 `domain/trajectory.py` 展平后交给 `ALMotion.angleInterpolationBezier`。
+- 新增能力：领域模型放 `domain/`，抽象端口放 `service/ports.py`，具体实现放 `service/`（如 `qi_robot.py`），接口放 `api/`；不要在 `api/` 里直接调用 `qi`。

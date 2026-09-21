@@ -1,64 +1,58 @@
-"""FastAPI REST 路由。"""
+"""REST 路由：依赖服务层，不直接接触基础设施。"""
 
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 
 from fastapi import APIRouter, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import Response, StreamingResponse
 
-from . import models
-from .errors import MotionBusyError, RobotError, RobotUnreachableError
-from .robot import Robot
+from ..domain.errors import MotionBusyError, RobotError, RobotUnreachableError
+from . import schemas
 
 router = APIRouter()
-
 _MJPEG_BOUNDARY = "frame"
 
 
-def get_robot(request: Request) -> Robot:
-    robot = getattr(request.app.state, "robot", None)
-    if robot is None:
+def _container(request: Request) -> Any:
+    container = getattr(request.app.state, "container", None)
+    if container is None:
         raise RobotUnreachableError("机器人未初始化")
-    return robot
+    return container
 
 
 def _ensure_idle(request: Request) -> None:
-    if request.app.state.runner.busy():
+    if _container(request).jobs.busy():
         raise MotionBusyError("有动作正在执行，请先停止或等待完成")
 
 
 # -- 健康与状态 ------------------------------------------------------------
 @router.get("/health")
 def health(request: Request) -> dict:
-    robot = getattr(request.app.state, "robot", None)
-    info = {"status": "ok", "robot": {"connected": False}}
-    if robot is not None:
-        try:
-            info["robot"] = {
-                "connected": robot.connected,
-                "ip": robot.settings.nao_ip,
-                "port": robot.settings.nao_port,
-            }
-            if not robot.connected:
-                robot.connect()
-                info["robot"]["connected"] = True
-        except RobotError as exc:
-            info["status"] = "degraded"
-            info["robot"] = {"connected": False, "error": exc.message}
-    return info
+    container = getattr(request.app.state, "container", None)
+    if container is None:
+        return {"status": "ok", "robot": {"connected": False}}
+    try:
+        status = container.gateway.status()
+        if not container.gateway.connected():
+            container.gateway.connect()
+            status = container.gateway.status()
+        return {"status": "ok", "robot": status}
+    except RobotError as exc:
+        return {"status": "degraded", "robot": {"connected": False, "error": exc.message}}
 
 
 @router.get("/api/robot/status")
 def robot_status(request: Request) -> dict:
-    robot = get_robot(request)
-    data = robot.status()
-    data["camera"] = robot.camera_info()
-    current = request.app.state.runner.current()
+    container = _container(request)
+    data = container.gateway.status()
+    data["camera"] = container.camera.info()
+    current = container.jobs.current()
     data["current_job"] = current.to_dict() if current else None
     try:
-        data["volume"] = robot.get_volume()
+        data["volume"] = container.audio.get_volume()
     except RobotError:
         data["volume"] = None
     return data
@@ -66,16 +60,14 @@ def robot_status(request: Request) -> dict:
 
 # -- 说话 ------------------------------------------------------------------
 @router.post("/api/robot/say")
-def say(request: Request, body: models.SayRequest) -> dict:
-    robot = get_robot(request)
-    robot.say(body.text, language=body.language, animated=body.animated)
+def say(request: Request, body: schemas.SayRequest) -> dict:
+    _container(request).speech.say(body.text, language=body.language, animated=body.animated)
     return {"ok": True, "text": body.text}
 
 
 @router.post("/api/robot/stop")
 def stop(request: Request) -> dict:
-    robot = get_robot(request)
-    robot.stop_all()
+    _container(request).gateway.stop_all()
     return {"ok": True}
 
 
@@ -83,103 +75,99 @@ def stop(request: Request) -> dict:
 @router.post("/api/robot/wake")
 def wake(request: Request) -> dict:
     _ensure_idle(request)
-    get_robot(request).wake_up()
+    _container(request).motion.wake_up()
     return {"ok": True, "awake": True}
 
 
 @router.post("/api/robot/rest")
 def rest(request: Request) -> dict:
     _ensure_idle(request)
-    get_robot(request).rest()
+    _container(request).motion.rest()
     return {"ok": True, "awake": False}
 
 
 @router.get("/api/robot/postures")
 def postures(request: Request) -> dict:
-    return {"postures": get_robot(request).list_postures()}
+    return {"postures": _container(request).motion.list_postures()}
 
 
 @router.post("/api/robot/posture")
-def go_to_posture(request: Request, body: models.PostureRequest) -> dict:
+def go_to_posture(request: Request, body: schemas.PostureRequest) -> dict:
     _ensure_idle(request)
-    name = get_robot(request).go_to_posture(body.name, body.speed)
+    name = _container(request).motion.go_to_posture(body.name, body.speed)
     return {"ok": True, "posture": name}
 
 
 @router.post("/api/robot/angles")
-def set_angles(request: Request, body: models.AnglesRequest) -> dict:
+def set_angles(request: Request, body: schemas.AnglesRequest) -> dict:
     _ensure_idle(request)
-    get_robot(request).set_angles(body.names, body.angles, body.speed)
+    _container(request).motion.set_angles(body.names, body.angles, body.speed)
     return {"ok": True}
 
 
 @router.post("/api/robot/move")
-def move(request: Request, body: models.MoveRequest) -> dict:
+def move(request: Request, body: schemas.MoveRequest) -> dict:
     _ensure_idle(request)
-    get_robot(request).move(body.x, body.y, body.theta)
+    _container(request).motion.move(body.x, body.y, body.theta)
     return {"ok": True}
 
 
 # -- 动作 ------------------------------------------------------------------
 @router.get("/api/movements")
 def list_movements(request: Request) -> dict:
-    infos = get_robot(request).list_movements()
-    return {"movements": [info.__dict__ for info in infos]}
+    infos = _container(request).movement.list()
+    return {"movements": [info.to_dict() for info in infos]}
 
 
 @router.post("/api/movements/{name}", status_code=202)
-def start_movement(request: Request, name: str, body: models.MovementRequest):
-    robot = get_robot(request)
-    robot.movements.resolve(name)  # 提前校验，未知动作直接 404
+def start_movement(request: Request, name: str, body: schemas.MovementRequest):
+    container = _container(request)
+    container.movement.ensure_exists(name)  # 未知动作直接 404
     if body.wait:
-        result = robot.play_movement(name)
-        return {"ok": True, **result.to_dict()}
-    job = request.app.state.runner.submit(
-        "movement", name, lambda: robot.play_movement(name).to_dict()
-    )
-    return {"job_id": job.id, "name": name, "status": job.status}
+        return {"ok": True, **container.movement.execute(name).to_dict()}
+    job = container.jobs.submit_movement(name)
+    return {"job_id": job.id, "name": name, "status": job.status.value}
 
 
 @router.get("/api/jobs")
 def list_jobs(request: Request) -> dict:
-    return {"jobs": [job.to_dict() for job in request.app.state.runner.list()]}
+    return {"jobs": [job.to_dict() for job in _container(request).jobs.list()]}
 
 
 @router.get("/api/jobs/{job_id}")
 def get_job(request: Request, job_id: str) -> dict:
-    return request.app.state.runner.get(job_id).to_dict()
+    return _container(request).jobs.get(job_id).to_dict()
 
 
 @router.delete("/api/jobs/{job_id}")
 def cancel_job(request: Request, job_id: str) -> dict:
-    robot = get_robot(request)
-    cancelled = request.app.state.runner.cancel(job_id, on_cancel=robot.stop_all)
+    cancelled = _container(request).jobs.cancel(job_id)
     return {"ok": cancelled, "cancelled": cancelled}
 
 
 # -- 摄像头 ----------------------------------------------------------------
 @router.get("/api/camera/info")
 def camera_info(request: Request) -> dict:
-    return get_robot(request).camera_info()
+    return _container(request).camera.info()
 
 
 @router.get("/api/camera/snapshot")
 def camera_snapshot(request: Request, resolution: int | None = None) -> Response:
-    frame = get_robot(request).camera_snapshot(resolution)
+    frame = _container(request).camera.snapshot(resolution)
     return Response(content=frame, media_type="image/jpeg")
 
 
 @router.get("/api/camera/mjpeg")
 async def camera_mjpeg(request: Request, resolution: int | None = None) -> StreamingResponse:
-    robot = get_robot(request)
-    await run_in_threadpool(robot.start_camera)
+    container = _container(request)
+    await run_in_threadpool(container.camera.start)
+    interval = 1.0 / max(1, container.settings.camera_fps)
 
     async def generate():
-        interval = 1.0 / max(1, robot.settings.camera_fps)
         while True:
             if await request.is_disconnected():
                 break
-            frame = await run_in_threadpool(robot.camera_frame)
+            frame = await run_in_threadpool(container.camera.frame)
             if frame:
                 yield (
                     f"--{_MJPEG_BOUNDARY}\r\n"
@@ -196,8 +184,8 @@ async def camera_mjpeg(request: Request, resolution: int | None = None) -> Strea
 
 # -- 语音识别 --------------------------------------------------------------
 @router.post("/api/asr/listen")
-def listen(request: Request, body: models.ListenRequest) -> dict:
-    result = get_robot(request).listen(
+def listen(request: Request, body: schemas.ListenRequest) -> dict:
+    result = _container(request).speech.listen(
         body.vocabulary,
         timeout_s=body.timeout_s,
         word_spotting=body.word_spotting,
@@ -209,42 +197,41 @@ def listen(request: Request, body: models.ListenRequest) -> dict:
 
 # -- LED / 音量 ------------------------------------------------------------
 @router.post("/api/leds")
-def set_leds(request: Request, body: models.LedRequest) -> dict:
-    get_robot(request).set_leds(body.name, body.color, body.duration)
+def set_leds(request: Request, body: schemas.LedRequest) -> dict:
+    _container(request).led.set_leds(body.name, body.color, body.duration)
     return {"ok": True}
 
 
 @router.post("/api/leds/off")
-def leds_off(request: Request, body: models.LedOffRequest) -> dict:
-    get_robot(request).leds_off(body.name)
+def leds_off(request: Request, body: schemas.LedOffRequest) -> dict:
+    _container(request).led.off(body.name)
     return {"ok": True}
 
 
 @router.post("/api/leds/intensity")
-def leds_intensity(request: Request, body: models.LedIntensityRequest) -> dict:
-    get_robot(request).set_led_intensity(body.name, body.intensity)
+def leds_intensity(request: Request, body: schemas.LedIntensityRequest) -> dict:
+    _container(request).led.set_intensity(body.name, body.intensity)
     return {"ok": True}
 
 
 @router.post("/api/leds/rasta")
-def leds_rasta(request: Request, body: models.RastaRequest) -> dict:
-    get_robot(request).rasta(body.duration)
+def leds_rasta(request: Request, body: schemas.RastaRequest) -> dict:
+    _container(request).led.rasta(body.duration)
     return {"ok": True}
 
 
 @router.get("/api/volume")
 def get_volume(request: Request) -> dict:
-    return {"volume": get_robot(request).get_volume()}
+    return {"volume": _container(request).audio.get_volume()}
 
 
 @router.post("/api/volume")
-def set_volume(request: Request, body: models.VolumeRequest) -> dict:
-    value = get_robot(request).set_volume(body.volume)
-    return {"ok": True, "volume": value}
+def set_volume(request: Request, body: schemas.VolumeRequest) -> dict:
+    return {"ok": True, "volume": _container(request).audio.set_volume(body.volume)}
 
 
 # -- 逃生舱 ----------------------------------------------------------------
 @router.post("/api/call")
-def call_service(request: Request, body: models.CallRequest) -> dict:
-    result = get_robot(request).call_service(body.service, body.method, body.args)
+def call_service(request: Request, body: schemas.CallRequest) -> dict:
+    result = _container(request).escape.call(body.service, body.method, body.args)
     return {"ok": True, "result": result}

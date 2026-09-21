@@ -14,9 +14,6 @@ dependencies = [
     "uvicorn[standard]>=0.53.0",
 ]
 
-[project.scripts]
-embodied = "embodied.cli:main"
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"

@@ -1,4 +1,4 @@
-"""后台动作队列：长动作（如舞蹈）异步执行，用 job_id 轮询。"""
+"""任务队列的线程实现：单后台 worker。"""
 
 from __future__ import annotations
 
@@ -6,41 +6,15 @@ import queue
 import threading
 import time
 import uuid
-from dataclasses import dataclass, field
 from typing import Any, Callable
 
-from .errors import JobNotFoundError
+from ..domain.entities import Job
+from ..domain.errors import JobNotFoundError
+from ..domain.values import JobStatus
+from .ports import JobQueue
 
 
-@dataclass
-class Job:
-    id: str
-    kind: str
-    name: str
-    status: str = "queued"  # queued | running | done | failed | cancelled
-    created_at: float = field(default_factory=time.time)
-    started_at: float | None = None
-    finished_at: float | None = None
-    result: Any = None
-    error: str | None = None
-
-    def to_dict(self) -> dict:
-        return {
-            "id": self.id,
-            "kind": self.kind,
-            "name": self.name,
-            "status": self.status,
-            "created_at": self.created_at,
-            "started_at": self.started_at,
-            "finished_at": self.finished_at,
-            "result": self.result,
-            "error": self.error,
-        }
-
-
-class ActionRunner:
-    """单后台 worker，保证同一时刻只有一个长动作在跑。"""
-
+class ThreadJobQueue(JobQueue):
     def __init__(self) -> None:
         self._queue: queue.Queue = queue.Queue()
         self._jobs: dict[str, Job] = {}
@@ -72,7 +46,7 @@ class ActionRunner:
     def current(self) -> Job | None:
         with self._lock:
             for job in self._jobs.values():
-                if job.status == "running":
+                if job.status == JobStatus.RUNNING:
                     return job
         return None
 
@@ -81,14 +55,14 @@ class ActionRunner:
 
     def cancel(self, job_id: str, on_cancel: Callable[[], None] | None = None) -> bool:
         job = self.get(job_id)
-        if job.status not in ("queued", "running"):
+        if job.status not in (JobStatus.QUEUED, JobStatus.RUNNING):
             return False
-        job.status = "cancelled"
+        job.status = JobStatus.CANCELLED
         job.finished_at = time.time()
         if on_cancel is not None:
             try:
                 on_cancel()
-            except Exception:  # noqa: BLE001 - 取消失败不改状态
+            except Exception:  # 取消失败不改状态
                 pass
         return True
 
@@ -96,17 +70,17 @@ class ActionRunner:
         while True:
             job, func = self._queue.get()
             try:
-                if job.status != "cancelled":
-                    job.status = "running"
+                if job.status != JobStatus.CANCELLED:
+                    job.status = JobStatus.RUNNING
                     job.started_at = time.time()
                     try:
                         job.result = func()
-                        if job.status != "cancelled":
-                            job.status = "done"
+                        if job.status != JobStatus.CANCELLED:
+                            job.status = JobStatus.DONE
                     except Exception as exc:  # noqa: BLE001
                         job.error = str(exc)
-                        if job.status != "cancelled":
-                            job.status = "failed"
+                        if job.status != JobStatus.CANCELLED:
+                            job.status = JobStatus.FAILED
             finally:
                 job.finished_at = time.time()
                 self._queue.task_done()

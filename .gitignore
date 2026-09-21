@@ -4,3 +4,6 @@
 
 /.github/
 /Docs/文书/**
+
+__pycache__/
+*.py[cod]

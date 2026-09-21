@@ -1,0 +1,23 @@
+version = 1
+revision = 3
+requires-python = ">=3.12"
+
+[[package]]
+name = "embodied"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "qi" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "qi", specifier = ">=3.1.5" }]
+
+[[package]]
+name = "qi"
+version = "3.1.5"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a6/a2/9af765a4e955af83401134feae3dbd11b8a196bbe843345d9f86386f1832/qi-3.1.5-cp312-cp312-macosx_13_0_arm64.whl", hash = "sha256:f2130bb9fa47c618727112cc9b19d8c4d158365e9fe187198390126ef607155e", size = 6733821, upload-time = "2024-07-11T16:22:51.739Z" },
+    { url = "https://files.pythonhosted.org/packages/ac/6d/acc90da58e536237a62c77db4aefcd2bf828182d69a34c1dfb30e7e93cd3/qi-3.1.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:945623a872adbf40da29f848038a4b6015a6016785b37633d2f7e5241650c931", size = 7375951, upload-time = "2024-07-10T09:40:48.548Z" },
+]

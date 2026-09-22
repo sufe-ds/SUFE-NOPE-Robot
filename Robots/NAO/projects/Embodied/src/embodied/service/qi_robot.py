@@ -74,7 +74,7 @@ class CameraStreamer:
         self._stop = threading.Event()
         self._frame: bytes | None = None
         self._frame_ts = 0.0
-        self._frame_lock = threading.Lock()
+        self._frame_lock = threading.RLock()
         self._error: str | None = None
 
     @property
@@ -149,14 +149,17 @@ class CameraStreamer:
             return round(time.time() - self._frame_ts, 3)
 
     def info(self) -> dict:
+        # 注意：_frame_lock 不可重入，这里直接在持锁状态下计算 age，
+        # 不能调用 frame_age()（它会再次获取同一把锁导致死锁）。
         with self._frame_lock:
+            age = None if self._frame is None else round(time.time() - self._frame_ts, 3)
             return {
                 "camera": self.camera,
                 "resolution": self.resolution,
                 "width": self.width,
                 "height": self.height,
                 "fps": self.fps,
-                "age_s": self.frame_age(),
+                "age_s": age,
                 "error": self._error,
             }
 

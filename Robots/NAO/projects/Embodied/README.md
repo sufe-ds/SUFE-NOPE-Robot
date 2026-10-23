@@ -29,16 +29,19 @@ uv run embodied discover --json        # 机器可读输出
 需要显式传入机器人所在局域网段。退出码 0 表示找到候选，1 表示未找到，2 表示参数或网络错误。
 端口开放不等于一定是 NAO，返回的是候选地址。
 
-再启动服务（机器人地址等配置见下方「配置」，默认 `127.0.0.1:9559`）：
+再启动服务（参数优先于环境变量与 `.env`）：
 
 ```sh
-NAO_IP=192.168.2.34 uv run uvicorn embodied.app:app --host 0.0.0.0 --port 8000
+uv run embodied serve --robot-ip 192.168.2.34
+uv run embodied serve --robot-ip 192.168.2.34 --host 0.0.0.0 --port 8000
 
 # 不接机器人、纯本地体验：
-EMBODIED_DRY_RUN=1 uv run uvicorn embodied.app:app --host 0.0.0.0 --port 8000
+uv run embodied serve --dry-run
 ```
 
-PowerShell 里把环境变量写成 `$env:NAO_IP = "192.168.2.34"`。
+`serve` 参数：`--robot-ip` / `--robot-port` / `--host` / `--port` / `--dry-run` / `--log-level`。
+未给出的参数回落到环境变量 / `.env` 或默认值（机器人 `127.0.0.1:9559`，服务 `0.0.0.0:8000`）。
+环境变量仍受支持，PowerShell 里写作 `$env:NAO_IP = "192.168.2.34"`。
 
 - REST 文档：`http://localhost:8000/docs`
 - MCP 端点：`http://localhost:8000/mcp/`
@@ -57,7 +60,7 @@ PowerShell 里把环境变量写成 `$env:NAO_IP = "192.168.2.34"`。
 {"mcpServers": {"nao": {"command": "uvx", "args": ["fastmcp-remote", "http://localhost:8000/mcp/", "--auth", "none"]}}}
 ```
 
-局域网其他机器访问本机服务时，需要在防火墙放行 `EMBODIED_PORT`。
+局域网其他机器访问本机服务时，需要在防火墙放行服务端口（默认 8000）。
 
 ## 能力
 
@@ -74,7 +77,7 @@ PowerShell 里把环境变量写成 `$env:NAO_IP = "192.168.2.34"`。
 
 ## 配置
 
-环境变量或项目根目录 `.env`（模板见 `.env.example`）：
+环境变量或项目根目录 `.env`（模板见 `.env.example`）；命令行参数优先于它们。`uv run embodied serve` 可直接传 `--robot-ip` / `--robot-port` / `--host` / `--port` / `--log-level`。
 
 - `NAO_IP` / `NAO_PORT`：机器人地址与端口。
 - `EMBODIED_HOST` / `EMBODIED_PORT` / `EMBODIED_MCP_PATH`：服务监听。
@@ -87,7 +90,7 @@ PowerShell 里把环境变量写成 `$env:NAO_IP = "192.168.2.34"`。
 
 ```sh
 uv run pytest                                                     # 全部使用 FakeRobot，无需机器人
-EMBODIED_DRY_RUN=1 uv run uvicorn embodied.app:app --port 8000    # dry-run 起服务
+uv run embodied serve --dry-run                                   # dry-run 起服务
 ```
 
 ### 架构
@@ -98,7 +101,7 @@ EMBODIED_DRY_RUN=1 uv run uvicorn embodied.app:app --port 8000    # dry-run 起�
 - `service/` — 服务层：应用服务 + `ports.py` 抽象端口（`RobotPort` / `RobotLocator` / `MovementRepository` / `JobQueue`）+ 具体实现（`qi_robot.py`、`fake_robot.py`、`discovery.py`、`network_scan.py`、`movement_files.py`、`thread_jobs.py`、`config.py`）。本项目没有数据库，故不单设基础设施层。
 - `api/` — 交付层：`rest.py`（FastAPI）、`mcp.py`（FastMCP）、`schemas.py`、错误映射。依赖服务层，不直接接触 `qi`。
 - `container.py` / `app.py` — 组装根：把具体实现注入应用服务，再交给 API。
-- `cli.py` / `discover.py` — 服务外的发现命令 `uv run embodied discover`，不经过 `Container`。
+- `cli.py` / `discover.py` — `uv run embodied` 的 `serve` / `discover` 入口；`discover` 不经过 `Container`。
 
 依赖倒置：应用服务依赖 `service/ports.py` 的抽象；具体实现也依赖该抽象（实现它），由 `container.py` 注入。抽象不依赖具体，具体依赖抽象；领域层不依赖任何外层。
 

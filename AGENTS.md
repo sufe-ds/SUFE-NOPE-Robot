@@ -12,12 +12,11 @@
 
 ## Embodied 工程（`Robots/NAO/projects/Embodied/`）
 
-Python 3.12 + `uv` + [`qi`](https://github.com/aldebaran/libqi-python)（NAOqi 的 Python 3 绑定）。详见该目录 `README.md`。
+Python 3.12 + `uv` + [`qi`](https://github.com/aldebaran/libqi-python)（NAOqi 的 Python 3 绑定；Windows 上是导入名同为 `qi` 的 `libqi-windows` 轮子）。详见该目录 `README.md`。
 
-**关键限制：`qi` 只发布 manylinux / macOS 轮子，没有 Windows 轮子。**
-必须在 WSL/Linux（或 macOS）下运行。仓库内 `.venv` 是 Linux 版（`home = /usr/bin`，含 `bin/` 与 `.so`）；Windows 原生 `uv sync` 无法安装 `qi`，不要试图在 Windows 上直接跑。
+Linux / macOS / Windows 三平台都能原生运行：`pyproject.toml` 按 `sys_platform` 分别声明 `qi` 与 `libqi-windows`，不要额外引入 WSL / Docker。
 
-命令（在 `Robots/NAO/projects/Embodied/` 下执行，且必须在 WSL/Linux）：
+命令（在 `Robots/NAO/projects/Embodied/` 下执行）：
 
 ```sh
 uv sync
@@ -25,6 +24,8 @@ NAO_IP=<robot-ip> uv run uvicorn embodied.app:app --host 0.0.0.0 --port 8000
 EMBODIED_DRY_RUN=1 uv run uvicorn embodied.app:app --port 8000   # 不接机器人
 uv run pytest                                                    # 用 FakeRobot，无需机器人
 ```
+
+Windows PowerShell 下环境变量写作 `$env:NAO_IP = "<robot-ip>"`。
 
 - 无 CLI / console script：服务用 `uvicorn embodied.app:app` 启动，配置走环境变量或 `.env`（`Settings` 在 `service/config.py`，`app = create_app()` 在 `app.py` 模块级）。
 - 连接地址：环境变量 `NAO_IP`/`NAO_PORT` > 默认 `127.0.0.1:9559`。
@@ -38,7 +39,7 @@ uv run pytest                                                    # 用 FakeRobot
 - `service/`：应用服务 + `ports.py` 抽象端口（`RobotPort` / `MovementRepository` / `JobQueue`）+ 具体实现（`qi_robot.py` 唯一接触 `qi`，`_motion_lock`/`_call_lock`，`stop_all` 绕过锁；`fake_robot.py`、`movement_files.py`、`thread_jobs.py`（单后台 worker）、`config.py`）。本项目无数据库，不单设基础设施层。
 - `api/`：`rest.py`（FastAPI）、`mcp.py`（FastMCP 工具）、`schemas.py`。只依赖 `service`，不得直接调用 `qi`。
 - `container.py`：组装根，把具体实现注入应用服务。
-- Agent 在 Windows 时：用 `http://localhost:8000/mcp/`（WSL localhost 转发），stdio-only 客户端用 `uvx fastmcp-remote http://localhost:8000/mcp/ --auth none`。
+- Agent 接入：服务端 `http://localhost:8000/mcp/`；stdio-only 客户端用 `uvx fastmcp-remote http://localhost:8000/mcp/ --auth none`。
 
 ## 约定
 

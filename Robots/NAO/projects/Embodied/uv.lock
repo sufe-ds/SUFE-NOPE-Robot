@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.12"
 resolution-markers = [
     "python_full_version >= '3.14'",
@@ -334,10 +334,11 @@ source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
     { name = "fastmcp" },
+    { name = "libqi-windows", marker = "sys_platform == 'win32'" },
     { name = "pillow" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
-    { name = "qi" },
+    { name = "qi", marker = "sys_platform != 'win32'" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -352,10 +353,11 @@ dev = [
 requires-dist = [
     { name = "fastapi", specifier = ">=0.141.1" },
     { name = "fastmcp", specifier = ">=4.0.5" },
+    { name = "libqi-windows", marker = "sys_platform == 'win32'", specifier = ">=4.0.1" },
     { name = "pillow", specifier = ">=10" },
     { name = "pydantic", specifier = ">=2" },
     { name = "pydantic-settings", specifier = ">=2" },
-    { name = "qi", specifier = ">=3.1.5" },
+    { name = "qi", marker = "sys_platform != 'win32'", specifier = ">=3.1.5" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.53.0" },
 ]
 
@@ -717,6 +719,16 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/43/4b/674af6ef2f97d56f0ab5153bf0bfa28ccb6c3ed4d1babf4305449668807b/keyring-25.7.0.tar.gz", hash = "sha256:fe01bd85eb3f8fb3dd0405defdeac9a5b4f6f0439edbb3149577f244a2e8245b", size = 63516, upload-time = "2025-11-16T16:26:09.482Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/81/db/e655086b7f3a705df045bf0933bdd9c2f79bb3c97bfef1384598bb79a217/keyring-25.7.0-py3-none-any.whl", hash = "sha256:be4a0b195f149690c166e850609a477c532ddbfbaed96a404d4e43f8d5e2689f", size = 39160, upload-time = "2025-11-16T16:26:08.402Z" },
+]
+
+[[package]]
+name = "libqi-windows"
+version = "4.0.1"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/56/7e/57bd65846d53e4dc8ab51ab4b2baf247751125909122acb2afa7de1a06ea/libqi_windows-4.0.1-1-cp312-cp312-win_amd64.whl", hash = "sha256:c30f985ff9b642c4b1133df1878152ff02b8845dc99ddea5cde0e3d9ee379173", size = 5742853, upload-time = "2026-02-18T15:34:17.479Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/d1/2b6605fdf5951c1d4c0cd3879909b0b30c927e08b118fa8445a815af1326/libqi_windows-4.0.1-1-cp313-cp313-win_amd64.whl", hash = "sha256:9e7272facf84534cdcf0e76be3ff4e8c20f8a34f5c5a243252f05aadee95c237", size = 5742836, upload-time = "2026-02-18T15:34:19.179Z" },
+    { url = "https://files.pythonhosted.org/packages/d9/8e/fb37d78d0377cce962ef0c5415e5fee88daad73af2b9dc27a94e13ee195e/libqi_windows-4.0.1-1-cp314-cp314-win_amd64.whl", hash = "sha256:bca1904cece6ade2df0695e7a5666ba1d6a986655fd89242f3a61bab04f23628", size = 5960036, upload-time = "2026-02-18T15:34:21.249Z" },
 ]
 
 [[package]]

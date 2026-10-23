@@ -8,7 +8,9 @@ NAO 机器人具身智能交互项目，基于 Python 3.12 + [qi](https://github
 - [uv](https://docs.astral.sh/uv/)
 - 依赖：`qi` / `fastapi` / `fastmcp` / `pillow` 等
 
-> **关键限制**：`qi` 只发布 manylinux / macOS 轮子，没有 Windows 轮子。本项目必须在 **WSL / Linux（或 macOS）** 下运行，Windows 原生 `uv sync` 装不上 `qi`。仓库内 `.venv` 是 Linux 版。
+`qi` 在 Linux / macOS 上是官方轮子；Windows 上由 [`libqi-windows`](https://pypi.org/project/libqi-windows/)
+提供（libqi 4.0.1 + 官方绑定 3.1.5 的 MSVC 构建，导入名同样是 `qi`，覆盖 cp311–cp314 win_amd64）。
+`pyproject.toml` 已按 `sys_platform` 分别声明，三个平台都直接 `uv sync`，不需要 WSL 或容器。
 
 ```sh
 uv sync
@@ -25,6 +27,8 @@ NAO_IP=192.168.2.34 uv run uvicorn embodied.app:app --host 0.0.0.0 --port 8000
 EMBODIED_DRY_RUN=1 uv run uvicorn embodied.app:app --host 0.0.0.0 --port 8000
 ```
 
+PowerShell 里把环境变量写成 `$env:NAO_IP = "192.168.2.34"`。
+
 - REST 文档：`http://localhost:8000/docs`
 - MCP 端点：`http://localhost:8000/mcp/`
 
@@ -36,13 +40,13 @@ EMBODIED_DRY_RUN=1 uv run uvicorn embodied.app:app --host 0.0.0.0 --port 8000
 {"mcpServers": {"nao": {"type": "http", "url": "http://localhost:8000/mcp/"}}}
 ```
 
-只支持 stdio 的客户端，在 Windows 上用 `uvx` 桥接（无需 `qi`）：
+只支持 stdio 的客户端，用 `uvx` 桥接（无需安装本项目依赖）：
 
 ```json
 {"mcpServers": {"nao": {"command": "uvx", "args": ["fastmcp-remote", "http://localhost:8000/mcp/", "--auth", "none"]}}}
 ```
 
-局域网其他机器访问 WSL 服务，需配置 mirrored networking 或 `netsh portproxy`（见 `.env.example` 顶部说明与计划文档）。
+局域网其他机器访问本机服务时，需要在防火墙放行 `EMBODIED_PORT`。
 
 ## 能力
 

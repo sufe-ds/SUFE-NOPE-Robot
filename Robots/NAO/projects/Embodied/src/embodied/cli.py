@@ -44,7 +44,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="NAOqi 端口（默认取 NAO_PORT，否则 9559）",
     )
     serve.add_argument("--host", metavar="HOST", help="服务监听地址（默认 0.0.0.0）")
-    serve.add_argument("--port", type=int, metavar="PORT", help="服务监听端口（默认 8000）")
+    serve.add_argument("--port", type=int, metavar="PORT", help="服务监听端口（默认 19559）")
     serve.add_argument("--dry-run", action="store_true", help="不连接机器人，使用假实现")
     serve.add_argument(
         "--log-level",

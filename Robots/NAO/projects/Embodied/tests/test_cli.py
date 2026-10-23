@@ -44,7 +44,7 @@ def test_serve_without_options_keeps_defaults(monkeypatch) -> None:
     assert settings.nao_ip == "127.0.0.1"
     assert settings.nao_port == 9559
     assert settings.host == "0.0.0.0"
-    assert settings.port == 8000
+    assert settings.port == 19559
     assert settings.dry_run is False
 
 

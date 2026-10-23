@@ -46,7 +46,7 @@ class Settings(BaseSettings):
 
     # 服务
     host: str = Field("0.0.0.0", validation_alias="EMBODIED_HOST")
-    port: int = Field(8000, validation_alias="EMBODIED_PORT")
+    port: int = Field(19559, validation_alias="EMBODIED_PORT")
     mcp_path: str = Field("/mcp", validation_alias="EMBODIED_MCP_PATH")
     api_token: str | None = Field(None, validation_alias="EMBODIED_API_TOKEN")
 

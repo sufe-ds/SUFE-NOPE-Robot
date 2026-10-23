@@ -41,7 +41,7 @@ Windows PowerShell 下环境变量写作 `$env:NAO_IP = "<robot-ip>"`。
 - `api/`：`rest.py`（FastAPI）、`mcp.py`（FastMCP 工具）、`schemas.py`。只依赖 `service`，不得直接调用 `qi`。
 - `container.py`：组装根，把具体实现注入应用服务。
 - `cli.py` + `discover.py`：`uv run embodied` 的 `serve` / `discover` 入口。`serve` 把参数映射成 `Settings` 后交给 `app.create_app`；`discover` 直接用 `service/` 的 `DiscoveryService` + `SubnetRobotLocator`，不经过 `Container`。
-- Agent 接入：服务端 `http://localhost:8000/mcp/`；stdio-only 客户端用 `uvx fastmcp-remote http://localhost:8000/mcp/ --auth none`。
+- Agent 接入：服务端 `http://localhost:19559/mcp/`；stdio-only 客户端用 `uvx fastmcp-remote http://localhost:19559/mcp/ --auth none`。
 
 ## 约定
 

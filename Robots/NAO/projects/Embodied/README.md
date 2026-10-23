@@ -33,34 +33,34 @@ uv run embodied discover --json        # 机器可读输出
 
 ```sh
 uv run embodied serve --robot-ip 192.168.2.34
-uv run embodied serve --robot-ip 192.168.2.34 --host 0.0.0.0 --port 8000
+uv run embodied serve --robot-ip 192.168.2.34 --host 0.0.0.0 --port 19559
 
 # 不接机器人、纯本地体验：
 uv run embodied serve --dry-run
 ```
 
 `serve` 参数：`--robot-ip` / `--robot-port` / `--host` / `--port` / `--dry-run` / `--log-level`。
-未给出的参数回落到环境变量 / `.env` 或默认值（机器人 `127.0.0.1:9559`，服务 `0.0.0.0:8000`）。
+未给出的参数回落到环境变量 / `.env` 或默认值（机器人 `127.0.0.1:9559`，服务 `0.0.0.0:19559`）。
 环境变量仍受支持，PowerShell 里写作 `$env:NAO_IP = "192.168.2.34"`。
 
-- REST 文档：`http://localhost:8000/docs`
-- MCP 端点：`http://localhost:8000/mcp/`
+- REST 文档：`http://localhost:19559/docs`
+- MCP 端点：`http://localhost:19559/mcp/`
 
 ### 连接 MCP（Agent 侧）
 
 支持远程 HTTP 的客户端：
 
 ```json
-{"mcpServers": {"nao": {"type": "http", "url": "http://localhost:8000/mcp/"}}}
+{"mcpServers": {"nao": {"type": "http", "url": "http://localhost:19559/mcp/"}}}
 ```
 
 只支持 stdio 的客户端，用 `uvx` 桥接（无需安装本项目依赖）：
 
 ```json
-{"mcpServers": {"nao": {"command": "uvx", "args": ["fastmcp-remote", "http://localhost:8000/mcp/", "--auth", "none"]}}}
+{"mcpServers": {"nao": {"command": "uvx", "args": ["fastmcp-remote", "http://localhost:19559/mcp/", "--auth", "none"]}}}
 ```
 
-局域网其他机器访问本机服务时，需要在防火墙放行服务端口（默认 8000）。
+局域网其他机器访问本机服务时，需要在防火墙放行服务端口（默认 19559）。
 
 ## 能力
 

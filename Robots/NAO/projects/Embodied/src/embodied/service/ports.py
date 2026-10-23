@@ -5,7 +5,14 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Callable
 
-from ..domain.entities import Job, Movement, MovementInfo, MovementResult, SpeechResult
+from ..domain.entities import (
+    Job,
+    Movement,
+    MovementInfo,
+    MovementResult,
+    RobotAddress,
+    SpeechResult,
+)
 from ..domain.values import Color
 
 
@@ -129,6 +136,18 @@ class MovementRepository(ABC):
 
     @abstractmethod
     def load(self, name: str) -> Movement: ...
+
+
+class RobotLocator(ABC):
+    """在局域网中探测 NAOqi 端点。"""
+
+    @abstractmethod
+    def local_subnets(self) -> list[str]: ...
+
+    @abstractmethod
+    def scan(
+        self, targets: list[str] | None = None, timeout_s: float = 0.3
+    ) -> list[RobotAddress]: ...
 
 
 class JobQueue(ABC):

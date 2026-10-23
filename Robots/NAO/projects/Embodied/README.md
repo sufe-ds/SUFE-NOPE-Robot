@@ -18,7 +18,18 @@ uv sync
 
 ## 使用
 
-启动服务（机器人地址等配置见下方「配置」，默认 `127.0.0.1:9559`）：
+先用发现工具确认机器人 IP（并发 TCP 探测 9559 端口，不需要先启动服务）：
+
+```sh
+uv run embodied discover 192.168.2.0/24
+uv run embodied discover --json        # 机器可读输出
+```
+
+省略目标时扫描本机网段与 `NAO_IP` 所在网段；本机地址不在机器人局域网（容器 / WSL NAT）时，
+需要显式传入机器人所在局域网段。退出码 0 表示找到候选，1 表示未找到，2 表示参数或网络错误。
+端口开放不等于一定是 NAO，返回的是候选地址。
+
+再启动服务（机器人地址等配置见下方「配置」，默认 `127.0.0.1:9559`）：
 
 ```sh
 NAO_IP=192.168.2.34 uv run uvicorn embodied.app:app --host 0.0.0.0 --port 8000
@@ -52,6 +63,7 @@ PowerShell 里把环境变量写成 `$env:NAO_IP = "192.168.2.34"`。
 
 | 分类 | 能力 |
 | --- | --- |
+| 机器人发现 | `uv run embodied discover`（启动服务前确认 IP） |
 | 说话 | `say`（可 `animated`）、`stop` |
 | 姿态/运动 | `wake` / `rest` / `list_postures` / `go_to_posture` / `set_angles` / `walk` |
 | 动作舞蹈 | `list_dances` / `dance`（异步任务，`get_job` 轮询）/ `cancel_job` |
@@ -83,9 +95,10 @@ EMBODIED_DRY_RUN=1 uv run uvicorn embodied.app:app --port 8000    # dry-run 起�
 领域驱动分层，依赖方向单向：`domain ← service ← api`。
 
 - `domain/` — 纯领域层：实体、值对象、领域函数（轨迹展平）、领域错误。不依赖任何外层。
-- `service/` — 服务层：应用服务 + `ports.py` 抽象端口（`RobotPort` / `MovementRepository` / `JobQueue`）+ 具体实现（`qi_robot.py`、`fake_robot.py`、`movement_files.py`、`thread_jobs.py`、`config.py`）。本项目没有数据库，故不单设基础设施层。
+- `service/` — 服务层：应用服务 + `ports.py` 抽象端口（`RobotPort` / `RobotLocator` / `MovementRepository` / `JobQueue`）+ 具体实现（`qi_robot.py`、`fake_robot.py`、`discovery.py`、`network_scan.py`、`movement_files.py`、`thread_jobs.py`、`config.py`）。本项目没有数据库，故不单设基础设施层。
 - `api/` — 交付层：`rest.py`（FastAPI）、`mcp.py`（FastMCP）、`schemas.py`、错误映射。依赖服务层，不直接接触 `qi`。
 - `container.py` / `app.py` — 组装根：把具体实现注入应用服务，再交给 API。
+- `cli.py` / `discover.py` — 服务外的发现命令 `uv run embodied discover`，不经过 `Container`。
 
 依赖倒置：应用服务依赖 `service/ports.py` 的抽象；具体实现也依赖该抽象（实现它），由 `container.py` 注入。抽象不依赖具体，具体依赖抽象；领域层不依赖任何外层。
 

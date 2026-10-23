@@ -20,6 +20,7 @@ Linux / macOS / Windows 三平台都能原生运行：`pyproject.toml` 按 `sys_
 
 ```sh
 uv sync
+uv run embodied discover 192.168.2.0/24                        # 先用工具确认机器人 IP
 NAO_IP=<robot-ip> uv run uvicorn embodied.app:app --host 0.0.0.0 --port 8000
 EMBODIED_DRY_RUN=1 uv run uvicorn embodied.app:app --port 8000   # 不接机器人
 uv run pytest                                                    # 用 FakeRobot，无需机器人
@@ -27,7 +28,7 @@ uv run pytest                                                    # 用 FakeRobot
 
 Windows PowerShell 下环境变量写作 `$env:NAO_IP = "<robot-ip>"`。
 
-- 无 CLI / console script：服务用 `uvicorn embodied.app:app` 启动，配置走环境变量或 `.env`（`Settings` 在 `service/config.py`，`app = create_app()` 在 `app.py` 模块级）。
+- 无通用 CLI：服务用 `uvicorn embodied.app:app` 启动，配置走环境变量或 `.env`（`Settings` 在 `service/config.py`，`app = create_app()` 在 `app.py` 模块级）。唯一 console script 是 `embodied`（`[project.scripts]` -> `cli.py`），只提供发现子命令 `uv run embodied discover`：发现必须在服务启动前完成，所以不放进 REST / MCP。
 - 连接地址：环境变量 `NAO_IP`/`NAO_PORT` > 默认 `127.0.0.1:9559`。
 - 有 pytest（`tests/`，`asyncio_mode=auto`）；无 lint / typecheck 配置，不要臆造。
 
@@ -36,13 +37,14 @@ Windows PowerShell 下环境变量写作 `$env:NAO_IP = "<robot-ip>"`。
 依赖方向 `domain ← service ← api`；组装根 `container.py` / `app.py` 可依赖所有层。**不要跨层或反向依赖。**
 
 - `domain/`：纯领域（实体 `entities.py`、值对象 `values.py`、`trajectory.py` 轨迹展平、`errors.py`）。不得导入 qi/FastAPI/pydantic/外层。
-- `service/`：应用服务 + `ports.py` 抽象端口（`RobotPort` / `MovementRepository` / `JobQueue`）+ 具体实现（`qi_robot.py` 唯一接触 `qi`，`_motion_lock`/`_call_lock`，`stop_all` 绕过锁；`fake_robot.py`、`movement_files.py`、`thread_jobs.py`（单后台 worker）、`config.py`）。本项目无数据库，不单设基础设施层。
+- `service/`：应用服务 + `ports.py` 抽象端口（`RobotPort` / `RobotLocator` / `MovementRepository` / `JobQueue`）+ 具体实现（`qi_robot.py` 唯一接触 `qi`，`_motion_lock`/`_call_lock`，`stop_all` 绕过锁；`fake_robot.py`、`network_scan.py`、`movement_files.py`、`thread_jobs.py`（单后台 worker）、`config.py`）。本项目无数据库，不单设基础设施层。
 - `api/`：`rest.py`（FastAPI）、`mcp.py`（FastMCP 工具）、`schemas.py`。只依赖 `service`，不得直接调用 `qi`。
 - `container.py`：组装根，把具体实现注入应用服务。
+- `cli.py` + `discover.py`：服务外的发现命令 `uv run embodied discover`，直接用 `service/` 的 `DiscoveryService` + `SubnetRobotLocator`；`python -m embodied.discover` 等价可用。
 - Agent 接入：服务端 `http://localhost:8000/mcp/`；stdio-only 客户端用 `uvx fastmcp-remote http://localhost:8000/mcp/ --auth none`。
 
 ## 约定
 
 - 文档与注释以中文为主。
-- 新代码放 `src/embodied/`，保持入口 `embodied.app:app`（服务）；不要引入 CLI。
+- 新代码放 `src/embodied/`，保持服务入口 `embodied.app:app`；CLI 只保留 `embodied discover`，不要扩成通用控制命令。
 - 用 `qi` 的方式与旧的 Python 2 `naoqi.ALProxy` 不同：`qi.Session().connect("tcp://<ip>:9559")`，再 `session.service("ALTextToSpeech")`。

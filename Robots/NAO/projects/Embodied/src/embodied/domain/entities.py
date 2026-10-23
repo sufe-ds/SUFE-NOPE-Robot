@@ -60,6 +60,18 @@ class SpeechResult:
         }
 
 
+@dataclass(frozen=True)
+class RobotAddress:
+    """局域网中探测到的一个 NAOqi 端点。"""
+
+    ip: str
+    port: int = 9559
+    name: str | None = None
+
+    def to_dict(self) -> dict:
+        return {"ip": self.ip, "port": self.port, "name": self.name}
+
+
 @dataclass
 class Job:
     id: str

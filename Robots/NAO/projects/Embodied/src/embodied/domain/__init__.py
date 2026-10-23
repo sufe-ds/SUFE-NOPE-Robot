@@ -4,7 +4,14 @@
 不导入 ``qi``、FastAPI、pydantic 或任何基础设施。
 """
 
-from .entities import Job, Movement, MovementInfo, MovementResult, SpeechResult
+from .entities import (
+    Job,
+    Movement,
+    MovementInfo,
+    MovementResult,
+    RobotAddress,
+    SpeechResult,
+)
 from .values import Color, JobStatus
 from .errors import (
     ActionTimeoutError,
@@ -26,6 +33,7 @@ __all__ = [
     "Movement",
     "MovementInfo",
     "MovementResult",
+    "RobotAddress",
     "SpeechResult",
     "Color",
     "JobStatus",

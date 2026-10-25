@@ -7,3 +7,4 @@
 - 幻尔科技
   - [官网](https://hiwonder.com.cn/)
   - [软件下载](https://hiwonder.com.cn/app-software)（我们需要下载的是 WonderPi）
+- [Embodied](https://github.com/001eander/Embodied)
